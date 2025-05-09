@@ -16,7 +16,8 @@ Includes:
 - Sobel edge detection
 - Triangle and Gaussian blur with 1D convolution
 
-📄 To Read About the Implementation: `Project1_Filters_Report.pdf`
+📄 To Read About the Implementation: [`Project1_Filters_Report.pdf`](project1/Project1_Filters_Report.pdf)
+
 ▶️ To Run The Program: See Below
 
 ### Project 2: Transformation & Viewing
@@ -28,7 +29,8 @@ Includes:
 - Dynamic camera tilt and zoom
 - Keyboard-controlled movement and animation speed
 
-📄 To Read About the Implementation: `Project2_Transform_Viewing_Report.pdf`
+📄 To Read About the Implementation: [`Project2_Transform_Viewing_Report.pdf`](project2/Project2_Transform_Viewing_Report.pdf)
+
 ▶️ To Run The Program: See Below
 
 ---
