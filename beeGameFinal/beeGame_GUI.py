@@ -34,6 +34,7 @@ class Button:
 
     # returns if the button has been clicked 
     def is_clicked(self, mouse_x, mouse_y):
+        mouse_y = - (mouse_y - self.screen_height)
         # checks if the mouse clicked within the boundaries of the button 
         return (self.bottomLeft_x <= mouse_x <= self.bottomLeft_x + self.button_width) and \
             (self.bottomLeft_y <= mouse_y <= self.bottomLeft_y + self.button_height)
@@ -129,7 +130,7 @@ class UI:
 
     # check if a button was clicked. returns name of button or None 
     def check_if_button_clicked(self, mouse_x, mouse_y):
-        print(f"Mouse Position: x={mouse_x}, y={mouse_y}")  # Debugging the mouse position
+        # print(f"Mouse Position: x={mouse_x}, y={mouse_y}")  # Debugging the mouse position
         button_clicked = None 
 
         if self.start_game_button.is_clicked(mouse_x, mouse_y):
