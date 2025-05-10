@@ -56,6 +56,7 @@ class Bee:
         self.leg_angle = 0              # leg animation parameters
         self.leg_speed = 0.005
         self.leg_range = 1.1
+        self.last_leg_angle = 0
 
         self.stinger_angle = 0          # stinger animation parameters
         self.stinger_speed = 0.006
@@ -87,11 +88,12 @@ class Bee:
 
         # angry mode 
         self.angry_bee_mode = False
-        self.angry_bee_mode_start_time = 0              # time angry mode period begins
-        self.recharge_time = 0                          # time recharging period begins
+        self.angry_mode_start_time = 0              # time angry mode period begins
+        self.recharge_start_time = 0                          # time recharging period begins
         self.is_recharging = False                      # if currently recharging  
-        self.angry_bee_mode_charge_time = 1000 * 5      # replace the 5 with num of seconds desired
-        self.angry_bee_mode_recharge_time = 1000 * 10   # replace the 5 with num of seconds desired
+        self.angry_mode_length = 1000 * 5      # replace the 5 with num of seconds desired
+        self.recharge_length = 1000 * 10   # replace the 5 with num of seconds desired
+        self.current_countdown_num = -1
 
 
 
@@ -148,42 +150,53 @@ class Bee:
         self.pupil_position[1] += (self.pupil_target[1] - self.pupil_position[1]) * self.pupil_speed
     
 
-    def handle_angry_key_event(self):
+    def activate_angry_mode(self):
+        current_time = pygame.time.get_ticks() 
+
+        self.angry_bee_mode = True
+        self.angry_mode_start_time = current_time
+        self.anim_speed = 2.0
+        self.walk_speed *= 3
+        self.current_countdown_num = self.angry_mode_length // 1000
+        print(f"\nANGRY MODE ACTIVATED")
+        print(f"     Countdown: {self.current_countdown_num}")
+
+
+    def handle_angry_mode(self):
         # get the current time 
         current_time = pygame.time.get_ticks() 
 
-        # if angry mode not active and recharge period is over 
-        if not self.angry_bee_mode and not self.is_recharging:
-            self.angry_bee_mode = True
-            self.angry_bee_mode_start_time = current_time
-            self.anim_speed = 2.0
-            self.walk_speed *= 3
-            print(f"\nANGRY MODE ACTIVATED")
         # if angry mode already active and we still are angry 
-        elif self.angry_bee_mode:
+        if self.angry_bee_mode:
             # if angry time is up
-            if current_time - self.angry_bee_mode_start_time >= self.angry_bee_mode_charge_time:
+            if current_time - self.angry_mode_start_time >= self.angry_mode_length:
                 self.angry_bee_mode = False
                 self.anim_speed = 1.0
                 self.walk_speed /= 3
-                self.recharge_time = current_time
+                self.recharge_start_time = current_time
                 self.is_recharging = True
-                print(f"\nANGRY MODE DE-ACTIVATED")
+                self.current_countdown_num = self.recharge_length // 1000
+                print(f"\nANGRY MODE DE-ACTIVATED....RECHARGING")
+                print(f"     Countdown: {self.current_countdown_num}")
             # angry time not up yet (countdown every second)
             else:
-                diff = current_time - self.angry_bee_mode_start_time
-                # if 50 <= (diff % 1000) <= 500 :
-                print(f"     Countdown: {diff}")
+                diff = current_time - self.angry_mode_start_time
+                sec_left = self.angry_mode_length - diff
+                if sec_left <= (self.current_countdown_num - 1) * 1000:
+                    self.current_countdown_num -= 1
+                    print(f"     Countdown: {self.current_countdown_num}")
         # if not angry and we are reacharging 
-        if self.is_recharging:
-            # if done recharging 
-            if current_time - self.angry_bee_mode_start_time >= self.angry_bee_mode_recharge_time:
+        elif self.is_recharging:
+            # if recharging time is up
+            if current_time - self.recharge_start_time >= self.recharge_length:
                 self.is_recharging = False 
-                print(f"\nANGRY MODE RECHARGED - READY TO BE MAD AGAIN")
+                print(f"FINISHED RECHARGING - READY TO BE MAD AGAIN")
             else:
-                diff = (current_time - self.angry_bee_mode_start_time) % self.angry_bee_mode_recharge_time
-                # if 50 <= (diff % 1000) <= 500 :
-                print(f"     Countdown: {diff}")
+                diff = current_time - self.recharge_start_time
+                sec_left = self.recharge_length - diff 
+                if sec_left <= (self.current_countdown_num - 1) * 1000:
+                    self.current_countdown_num -= 1
+                    print(f"     Countdown: {self.current_countdown_num}")
 
     # create bee geometry 
     def draw_bee(self): 
@@ -246,9 +259,13 @@ class Bee:
                 glRotatef(self.leg_angle * direction, 1, 0, 0)      # animate left legs
             else: 
                 drag_factor = 8.5  # Adjust to control how much the legs drag
-                leg_drag_angle = max(min(10 + (self.walk_vector[0] * drag_factor), 35), -35)
-                if self.in_reverse: leg_drag_angle *= -1
-                if self.walk_vector[0] <= 0: leg_drag_angle *= -1 # if in negative x-axis territory, reverse the angle 
+                leg_drag_angle = max(min(10 + (self.walk_vector[0] * drag_factor), 25), -25)
+                if self.in_reverse: 
+                    leg_drag_angle *= -1
+                    if self.walk_vector[0] <= 0:
+                        leg_drag_angle *= -1
+                elif self.walk_vector[0] <= 0: 
+                    leg_drag_angle *= -1 # if in negative x-axis territory, reverse the angle 
                 glRotatef(leg_drag_angle, 1, 0, 0)      # animate left legs
             glTranslate(0, -2.2, 0)
 
@@ -264,10 +281,18 @@ class Bee:
             if not self.actively_moving: 
                 glRotatef(-self.leg_angle * direction, 1, 0, 0)      # animate right legs
             else: 
+                # if self.walk_vector[2] == 0 or self.walk_vector[2] == 180:
+                #     leg_drag_angle = self.last_leg_angle    
+                # else:
                 drag_factor = 8.5  # Adjust to control how much the legs drag
-                leg_drag_angle = max(min(10 + (self.walk_vector[0] * drag_factor), 35), -35) # FIXME: WHEN CROSSING OVER Z-AXIS, THE ANGLE NEUTRALIZES FOR A SEC
-                if self.in_reverse: leg_drag_angle *= -1 # if going backwards, reverse the angle 
-                if self.walk_vector[0] <= 0: leg_drag_angle *= -1 # if in negative x-axis territory, reverse the angle 
+                leg_drag_angle = max(min(10 + (self.walk_vector[0] * drag_factor), 25), -25) # FIXME: WHEN CROSSING OVER Z-AXIS, THE ANGLE NEUTRALIZES FOR A SEC
+                if self.in_reverse: 
+                    leg_drag_angle *= -1 # if going backwards, reverse the angle 
+                    if self.walk_vector[0] <= 0:
+                        leg_drag_angle *= -1
+                elif self.walk_vector[0] <= 0: 
+                    leg_drag_angle *= -1 # if in negative x-axis territory, reverse the angle 
+                self.last_leg_angle = leg_drag_angle
                 glRotatef(leg_drag_angle, 1, 0, 0)      # animate right legs
             # glRotatef(-self.leg_angle * direction, 1, 0, 0)      # animate right legs
             glTranslate(0, -2.2, 0)

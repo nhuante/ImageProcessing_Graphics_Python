@@ -7,6 +7,7 @@ import numpy as np
 import math 
 
 from beeGame_model import Bee, Camera
+from beeGame_GUI import Button, UI
 
 width, height = 800, 600                                                    # width and height of the screen created
 
@@ -38,15 +39,40 @@ def drawGround():
         glVertex3fv(vertex)
     glEnd()
 
+# switch to orthographic mode to draw ui components 
+def set_2d_projection():
+    glPushMatrix()
+
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    glOrtho(0, width, 0, height, -1, 1)
+
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+
+# switch to perspective mode to draw 3d game components 
+def set_3d_projection():
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    gluPerspective(45, width/height, 0.1, 1000.0)
+
+    glMatrixMode(GL_MODELVIEW)
+
+
 
 def main():
     pygame.init()                                                           # initialize a pygame program
     glutInit()                                                              # initialize glut library 
 
+    # set up screen 
     screen = (width, height)                                                # specify the screen size of the new program window
     display_surface = pygame.display.set_mode(screen, DOUBLEBUF | OPENGL)   # create a display of size 'screen', use double-buffers and OpenGL
     pygame.display.set_caption('BeeGame - Do You Have Any Buzzing Talent?')     # set title of the program window
 
+    # create UI 
+    ui = UI(win_width=width, win_height=height)
+
+    # set up GL specs
     glEnable(GL_DEPTH_TEST)
     glMatrixMode(GL_PROJECTION)                                             # set mode to projection transformation
     glLoadIdentity()                                                        # reset transf matrix to an identity
@@ -57,12 +83,13 @@ def main():
     modelMatrix = glGetFloat(GL_MODELVIEW_MATRIX)
 
     # initialize the playerBee: body dimensions and transformation parameters 
-    playerBee = Bee() # by default, draw the basic playerBee
+    playerBee = Bee() 
 
     # initialize the camera: camera parameters 
-    camera = Camera(view_mode="front") # default view mode is "front"
+    camera = Camera(view_mode="front") # FIXME: set correct default view for the bee 
 
     # initialize the states of all the designated keys
+
     # bee movement parameters 
     key_left_on = False     # if left-arrow key is HELD on now
     key_right_on = False    # if right-arrow key is held on now
@@ -70,17 +97,17 @@ def main():
     key_down_on = False
     key_shift_on = False 
     key_ctrl_on = False
+
     # camera parameters 
     key_a_on = False        # if key 'A' is HELD on now
     key_d_on = False        # if key 'D' is HELD on now
     key_w_on = False        # if key 'W' is HELD on now
     key_s_on = False        # if key 'S' is HELD on now
     key_q_on = False        # if key 'Q' is HELD on now
-    key_e_on = False        # if key 'E' is HELD on now 
+    key_e_on = False        # if key 'E' is HELD on now
+
     # debugging mode 
     debugging_mode = True 
-    # angry mode 
-    angry_mode_activated = False
 
 
     while True:
@@ -90,15 +117,28 @@ def main():
 
         #--------START: pygame.event.get()
         for event in pygame.event.get():
+            # quitting the game, exiting the window basically 
             if event.type == pygame.QUIT:
                 pygame.quit()
 
-            if event.type == pygame.MOUSEMOTION:
-                if pygame.mouse.get_pressed()[0]:
-                    glRotatef(event.rel[1], 1, 0, 0)
-                    glRotatef(event.rel[0], 0, 1, 0)
+            # mouse input
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                # get mouse position 
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                # check if any of the buttons were clicked
+                button_clicked = ui.check_if_button_clicked(mouse_x, mouse_y)
+                # handle the correct button behavior 
+                if button_clicked == "start":           # start game button clicked 
+                    ui.room_text = "Level 1"
+                    print(" game is starting.....")
+                elif button_clicked == "help":
+                    print(" help menu loading.....")
 
-            if event.type == pygame.KEYDOWN:
+                    
+            
+
+            # keyboard input - key down
+            elif event.type == pygame.KEYDOWN:
                 # reset input 
                 if event.key == pygame.K_0:                 # reset the current view 
                     bResetModelMatrix = True
@@ -158,22 +198,22 @@ def main():
                     debugging_mode = not debugging_mode
                     if debugging_mode == False: playerBee.angry_bee_mode = False
                     print(F"\nDEBUGGING MODE - {debugging_mode} ")
-                elif event.key == pygame.K_m and debugging_mode:            # toggle angry mode indefinitely 
-                    playerBee.angry_bee_mode = not playerBee.angry_bee_mode
-                    if playerBee.anim_speed == 1.0: # in normal mode --> switching to mad mode
-                        playerBee.anim_speed = 2.0
-                        playerBee.walk_speed *= 3
-                    else:                           # in angry mode  --> switching to normal mode
-                        playerBee.anim_speed = 1.0
-                        playerBee.walk_speed /= 3
-                    print(F"\nANGRY BEE MODE - {playerBee.angry_bee_mode} ")
-                elif event.key == pygame.K_z:
-                    angry_mode_activated = True
-                    # playerBee.handle_angry_key_event()
+                # elif event.key == pygame.K_m and debugging_mode:            # toggle angry mode indefinitely 
+                #     playerBee.angry_bee_mode = not playerBee.angry_bee_mode
+                #     if playerBee.anim_speed == 1.0: # in normal mode --> switching to mad mode
+                #         playerBee.anim_speed = 2.0
+                #         playerBee.walk_speed *= 3
+                #     else:                           # in angry mode  --> switching to normal mode
+                #         playerBee.anim_speed = 1.0
+                #         playerBee.walk_speed /= 3
+                #     print(F"\nANGRY BEE MODE - {playerBee.angry_bee_mode} ")
+                elif event.key == pygame.K_z and (not playerBee.angry_bee_mode and not playerBee.is_recharging):
+                    # angry_mode_activated = True
+                    playerBee.activate_angry_mode()
 
                 
-
-            if event.type == pygame.KEYUP:
+            # keyboard input - key up
+            elif event.type == pygame.KEYUP:
                 # bee movement paramter inputs 
                 if event.key == pygame.K_RIGHT:             # stop turning right 
                     key_right_on = False 
@@ -206,7 +246,7 @@ def main():
 
         
         #--------END: pygame.event.get()
-            
+        # if game not paused, handle bee movement
         if not playerBee.paused:
             
             # update the bee's freeform movement parameters 
@@ -236,8 +276,8 @@ def main():
                 playerBee.height_offset -= 0.2
 
             # handle angry mode 
-            # if angry_mode_activated:
-            playerBee.handle_angry_key_event()
+            if playerBee.angry_bee_mode or playerBee.is_recharging:
+                playerBee.handle_angry_mode()
                 # if playerBee.angry_bee_mode == False:
                     # angry_mode_activated = False
 
@@ -276,7 +316,7 @@ def main():
 
         glLoadIdentity()
         
-        # Task 7: Upate camera parameters: eye_position and look_at point
+        # Upate camera parameters: eye_position and look_at point
         new_eye_pos, new_lookat = camera.update_view(playerBee)
 
         
@@ -290,6 +330,13 @@ def main():
         
         playerBee.update_animations()
         playerBee.draw_bee()
+
+        # Clear the screen and draw the Lobby GUI
+        # glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        set_2d_projection()
+        ui.draw_lobby_gui()
+        glPopMatrix()
+        set_3d_projection()
 
         # draw other entities in the scene
         drawAxes()
