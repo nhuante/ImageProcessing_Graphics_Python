@@ -80,6 +80,7 @@ class UI:
         # text elements
         self.lobby_text = "Lobby"
         self.level_text = "Level 1"
+        self.help_menu_title = "Lost?"
         self.room_text_font = GLUT_BITMAP_HELVETICA_18
 
         self.score_text = "Score: XXXX"
@@ -139,6 +140,18 @@ class UI:
                                        screen_width=self.win_width, 
                                        
                                        initial_color=(158/255, 28/255, 28/255))
+        
+        # exit help menu button
+        self.exitHelp_button = Button(label="X", button_width=0.5*self.bottom_button_width, 
+                                      button_height=self.bottom_button_height, 
+                                      
+                                      bottomLeft_x=self.win_width-10-0.5*self.bottom_button_width, 
+                                      bottomLeft_y=self.win_height-10-self.bottom_button_height, 
+
+                                      screen_height=self.win_height, 
+                                      screen_width=self.win_width, 
+
+                                      initial_color=(205/255, 0, 0))
 
     # draw text on the screen at position (x, y)
     def draw_text(self, text, x, y, font=GLUT_BITMAP_HELVETICA_18, color=(1.0, 1.0, 1.0)):
@@ -220,16 +233,23 @@ class UI:
                             color=(0, 153/255, 0))
 
     # check if a button was clicked. returns name of button or None 
-    def check_if_button_clicked(self, mouse_x, mouse_y, mode):
+    def check_if_button_clicked(self, mouse_x, mouse_y, mode, help):
         # print(f"Mouse Position: x={mouse_x}, y={mouse_y}")  # Debugging the mouse position
         button_clicked = None 
 
         if mode == "Lobby":
-            if self.start_game_button.is_clicked(mouse_x, mouse_y):
-                button_clicked = "start"
-            elif self.help_button.is_clicked(mouse_x, mouse_y):
-                button_clicked = "help"
+            if help: # if in help menu only listen for exit help button 
+                if self.exitHelp_button.is_clicked(mouse_x, mouse_y):
+                    button_clicked="exitHelp"
+            else: # if help not showing, only listen for normal lobby buttons
+                if self.start_game_button.is_clicked(mouse_x, mouse_y):
+                    button_clicked = "start"
+                elif self.help_button.is_clicked(mouse_x, mouse_y):
+                    button_clicked = "help"
         elif mode == "Level 1":
+            if help: # if in help menu only listen for exit help button 
+                if self.exitHelp_button.is_clicked(mouse_x, mouse_y):
+                    button_clicked = "exitHelp"
             if self.toLobby_game_button.is_clicked(mouse_x, mouse_y):
                 button_clicked = "toLobby"
             elif self.help_game_button.is_clicked(mouse_x, mouse_y):
@@ -241,5 +261,53 @@ class UI:
 
     # handles when the help button is clicked 
     def draw_help_menu(self):
-        pass
+        # draw the exit button on top of all other elements 
+        self.exitHelp_button.draw_text()
+        self.exitHelp_button.draw_button()
+
+        # draw the top text (lost?)
+        self.draw_text(self.help_menu_title, self.win_width // 2 - 30, self.win_height - 60)
+
+        # draw the general instructions
+        intro_lines = [ '''Welcome to The Bee Game!!!''', 
+                        '''                           ''', 
+                        '''  This is your home garden. Isn't it just the prettiest thing you've ever seen!! Anways this is''',  
+                        '''  the dealio. It's nearing the end of Spring which means we have LITERALLY MINUTES to ''',  
+                        '''  collect the rest of the flowers' pollen and the hive needs your  help. But, watch out! ''' , 
+                        '''  Don't let the beauty of the garden fool you....there are some pretty dangerous insects ''', 
+                        '''  out there.''',  
+                        '''                             ''', 
+                        '''  Alright, what are you waiting for?! Get out there!''']
+        top_offset = 100
+        for line in intro_lines:
+            self.draw_text(line, 25, self.win_height - top_offset)
+            top_offset += 25
+
+        # draw the general instructions
+        controls_lines = [ '''----------------------------------------------------------------  ''', 
+                            '''Controls''', 
+                            # '''          ''', 
+                            '''    [W/A/S/D]...........Pan the camera up/left/down/right when in 3rd-person view ''', 
+                            '''    [Q/E]...................Zoom the camera in/out when in 3rd-person view ''', 
+                            '''    [Arrow Keys]......Move the Bee forward/left/backward/right ''',
+                            '''    [Shift/Ctrl]..........Move the Bee up/down, fly higher or lower''', 
+                            '''    [Z]......................Activate Attack Mode (lasts 5 seconds)(takes 10 sec to recharge) ''',
+                            '''    [P or Esc]...........Pause/UnPause ''',
+                            '''    [E]......................Pick up pollen particle  [coming soon]''',
+                            '''    [Q]......................Drop off pollen particle [coming soon] ''',
+                        ] 
+        top_offset = 100 + (len(intro_lines) * 25)
+        for line in controls_lines:
+            self.draw_text(line, 25, self.win_height - top_offset)
+            top_offset += 25
+
+        # draw rectangle as the background of the menu - dark brown 
+        self.draw_rectangle(bottomLeft_x=22.5, bottomLeft_y=22.5, 
+                            topRight_x=self.win_width-22.5, topRight_y=self.win_height-35, 
+                            color=(212/255, 151/255, 89/255))
+        
+        # draw rectangle as the background of the menu - dark brown 
+        self.draw_rectangle(bottomLeft_x=15, bottomLeft_y=15, 
+                            topRight_x=self.win_width-15, topRight_y=self.win_height-25, 
+                            color=(61/255, 38/255, 14/255))
         

@@ -140,7 +140,7 @@ def main():
                 # if not currently in level and not paused, don't check for mouse clicks 
                 if (game_mode == "Lobby" and not playerBee.paused) or (game_mode == "Level 1" and playerBee.paused):  
                     # check if any of the buttons were clicked
-                    button_clicked = ui.check_if_button_clicked(mouse_x, mouse_y, game_mode)
+                    button_clicked = ui.check_if_button_clicked(mouse_x, mouse_y, game_mode, help_showing)
                     # handle the correct button behavior 
                     if button_clicked == "start":           # start game button clicked 
                         print(" game is starting.....")
@@ -159,6 +159,15 @@ def main():
                         playerBee.reset_bee_switching_rooms()
                     elif button_clicked == "helpGame":
                         print(" help-inGame menu loading....")
+                        help_showing = True
+
+                # if showing the help button, listen for exit help button click 
+                if help_showing:
+                    button_clicked = ui.check_if_button_clicked(mouse_x, mouse_y, game_mode, help_showing)
+                    if button_clicked == "exitHelp":
+                        help_showing = False
+                        if game_mode == "Lobby": playerBee.paused = False
+
                 
                 
             # keyboard input - key down
@@ -368,15 +377,22 @@ def main():
 
         # draw gui elements based on room
         if game_mode == "Lobby":
-            if playerBee.paused: ui.draw_lobby_pause_gui()
-            else: ui.draw_lobby_gui()
+            if playerBee.paused and not help_showing: 
+                ui.draw_lobby_pause_gui()   # lobby pause screen
+            elif help_showing:  
+                ui.draw_help_menu()         # help screen (pause while we show)
+                playerBee.paused = True
+            else:
+                ui.draw_lobby_gui()         # normal lobby ui
         elif game_mode == "Level 1":
-            ui.draw_level_gui()
-            if playerBee.paused: ui.draw_level_pause_gui()
+            if playerBee.paused and not help_showing: 
+                ui.draw_level_pause_gui()   # level pause screen 
+            elif help_showing:
+                ui.draw_help_menu()         # help screen (pause while we show)
+                playerBee.paused = True
+            else:
+                ui.draw_level_gui()         # normal level ui
         
-        # check if help menu should be drawn in either room 
-        if help_showing:
-            ui.draw_help_menu()
 
         glPopMatrix()           # get rid of the matrix changes from gui drawing 
         set_3d_projection()     # and change back to 3d mode for the game environment elements
