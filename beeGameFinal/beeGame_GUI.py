@@ -83,9 +83,9 @@ class UI:
         self.help_menu_title = "Lost?"
         self.room_text_font = GLUT_BITMAP_HELVETICA_18
 
-        self.score_text = "Score: XXXX"
-        self.bee_health_bar = "Bee Health: 100%"
-        self.level_timer = "Timer: XXXX"
+        # self.score_text = "Score: XXXX"
+        # self.bee_health_bar = "Bee Health: 100%"
+        # self.level_timer = "Timer: XXXX"
 
         # buttons at the bottom (start game and help)
         self.num_of_bottom_buttons = 2
@@ -199,15 +199,21 @@ class UI:
 
 
     # draw the gui elements in the level 
-    def draw_level_gui(self):
+    def draw_level_gui(self, score, level, health, timer_left_ms):
         distance_from_top = self.win_height - 30
         # draw the top text (level 1)
-        self.draw_text(self.level_text, self.win_width - 300, distance_from_top)
+        self.draw_text(f"Level:{level}", self.win_width - 300, distance_from_top)
 
         # draw other in-game stats in the header
-        self.draw_text(self.score_text, 50, distance_from_top)                      # score 
-        self.draw_text(self.bee_health_bar, 230, distance_from_top)                  # health 
-        self.draw_text(self.level_timer, self.win_width - 150, distance_from_top)    # timer 
+        self.draw_text(f"Score: {score}", 50, distance_from_top)  # score
+                             
+        health_color = tuple() 
+        if 25 < health <= 50: health_color = (220/255, 228/255, 3/255)
+        elif health <= 25: health_color = (204/255, 0, 0)
+        else: health_color = (1, 1, 1)
+        self.draw_text(f"Health: {health}%", 230, distance_from_top, color=health_color)                  # health 
+        
+        self.draw_text(f"Sec Left: {timer_left_ms//1000}", self.win_width - 150, distance_from_top)    # timer 
 
         # draw header rectangle 
         self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y= self.win_height-50, 
@@ -219,6 +225,30 @@ class UI:
     def draw_level_pause_gui(self):
         # draw the top text (level 1)
         self.draw_text("Paused", self.win_width // 2 - 30, self.win_height // 2)
+
+        # draw the buttons (toLobby, help)
+        self.toLobby_game_button.draw_text()
+        self.toLobby_game_button.draw_button()
+        
+        self.help_game_button.draw_text()
+        self.help_game_button.draw_button()
+
+        # draw banner rectangle 
+        self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y=self.win_height // 2 - 20, 
+                            topRight_x=810, topRight_y=self.win_height // 2 + 30, 
+                            color=(0, 153/255, 0))
+        
+    # draw the gui elements in the level (when game is over)
+    def draw_end_of_game_gui(self, gameWon: bool):
+        # draw the main text 
+        if gameWon: 
+            text = "You Won!"
+            x_offset_to_center = 30
+        else: 
+            text = "Game Over...duh duh duhh"
+            color = (204/255, 0, 0)
+            x_offset_to_center = 100
+        self.draw_text(text, self.win_width // 2 - x_offset_to_center, self.win_height // 2)
 
         # draw the buttons (toLobby, help)
         self.toLobby_game_button.draw_text()

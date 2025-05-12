@@ -114,6 +114,8 @@ def main():
     # game mode 
     game_mode = "Lobby"
     help_showing = False
+    game_over = False 
+    game_result = None
 
     # garden properties 
     garden_x_boundaries = (0, 200)
@@ -138,12 +140,14 @@ def main():
                 mouse_x, mouse_y = pygame.mouse.get_pos()\
 
                 # if not currently in level and not paused, don't check for mouse clicks 
-                if (game_mode == "Lobby" and not playerBee.paused) or (game_mode == "Level 1" and playerBee.paused):  
+                if game_over or (game_mode == "Lobby" and not playerBee.paused) or (game_mode == "Level 1" and playerBee.paused):  
                     # check if any of the buttons were clicked
                     button_clicked = ui.check_if_button_clicked(mouse_x, mouse_y, game_mode, help_showing)
                     # handle the correct button behavior 
                     if button_clicked == "start":           # start game button clicked 
                         print(" game is starting.....")
+                        game_over = False 
+                        game_result = None
                         game_mode = "Level 1"       # update game mode 
                         # playerBee.paused = False    # reset pausing when switching rooms
                         playerBee.reset_bee_switching_rooms()
@@ -181,28 +185,31 @@ def main():
                         print(F"\nGAME PAUSED - {playerBee.paused} ")
                 # if game not pause, listen for all keys 
                 else:
-                    # reset input 
+                    # reset camera input ----------------------------------------------------- 
                     if event.key == pygame.K_0:                 # reset the current view 
                         bResetModelMatrix = True
                         camera.reset_views()
-                    # switch camera view input 
+                    # switch camera view input -----------------------------------------------------
                     elif event.key == pygame.K_SPACE:           # switch view modes: FIXME: list viewing modes here 
                         camera.reset_views()
                         camera.switch_view()                   
-                    # bee movement paramter inputs 
+                    # bee movement paramter inputs -----------------------------------------------------
                     elif event.key == pygame.K_RIGHT:           # start turning right
                         key_right_on = True
                     elif event.key == pygame.K_LEFT:            # start turning left
                         key_left_on = True
-                    elif event.key == pygame.K_UP:
-                        key_up_on = True
-                    elif event.key == pygame.K_DOWN:
+                    elif event.key == pygame.K_UP:              # move forward
+                        key_up_on = True                
+                    elif event.key == pygame.K_DOWN:            # move backward
                         key_down_on = True
-                    elif event.key == pygame.K_LSHIFT:
+                    elif event.key == pygame.K_LSHIFT:          # ascend
                         key_shift_on = True
-                    elif event.key == pygame.K_LCTRL:
+                    elif event.key == pygame.K_LCTRL:           # descend
                         key_ctrl_on = True
-                    # camera parameter inputs 
+                    elif event.key == pygame.K_z and (not playerBee.angry_bee_mode and not playerBee.is_recharging and not playerBee.paused):
+                        # angry_mode_activated = True
+                        playerBee.activate_angry_mode()         # angry mode
+                    # camera parameter inputs -----------------------------------------------------
                     elif event.key == pygame.K_a:               # start looking left 
                         key_a_on = True
                     elif event.key == pygame.K_d:               # start looking right 
@@ -215,7 +222,7 @@ def main():
                         key_q_on = True
                     elif event.key == pygame.K_e:               # start zooming out
                         key_e_on = True
-                    # modifying bee animation/movement speeds 
+                    # DEVELOPER BUTTONS -----------------------------------------------------
                     elif event.key == pygame.K_1:                       # decrease swing speed for animation
                         playerBee.anim_speed -= 0.5
                         print("Swing Speed:", playerBee.anim_speed)    
@@ -228,22 +235,17 @@ def main():
                     elif event.key == pygame.K_4:                       # increase walk speed mp for walking
                         playerBee.walk_speed_mp += 0.1
                         print("Walk Speed MP:", playerBee.walk_speed_mp)
-                    # un-pause the game 
+                    elif event.key == pygame.K_5:                       # decrease bee health 
+                        playerBee.health_percentage -= 20
+                        print("Bee Health: ", playerBee.health_percentage)
+                    elif event.key == pygame.K_6:                       # increase score points 
+                        playerBee.score += 50
+                        print("Bee Score: ", playerBee.score)
+                    # un-pause the game -----------------------------------------------------
                     elif event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
                         playerBee.paused = not playerBee.paused       # will pause the current bee animation
                         if playerBee.paused: playerBee.start_pause()
                         print(F"\nGAME PAUSED - {playerBee.paused} ")
-                    # # reset bee to origin  
-                    # elif event.key == pygame.K_5:                       # reset playerBee to origin
-                    #     playerBee.resetToOrigin()
-                    # # debugging keys 
-                    # elif event.key == pygame.K_y:                       # toggle debugging mode 
-                    #     debugging_mode = not debugging_mode
-                    #     if debugging_mode == False: playerBee.angry_bee_mode = False
-                    #     print(F"\nDEBUGGING MODE - {debugging_mode} ")
-                    elif event.key == pygame.K_z and (not playerBee.angry_bee_mode and not playerBee.is_recharging and not playerBee.paused):
-                        # angry_mode_activated = True
-                        playerBee.activate_angry_mode()
 
                 
             # keyboard input - key up
@@ -345,7 +347,13 @@ def main():
                 camera.zoom_distance -= 0.5 # to match the speed of zooming in above      
 
         
-
+        # check if the game is over 
+        if playerBee.health_percentage <= 0:
+            game_over = True 
+            game_result = False
+        elif playerBee.score >= 100:
+            game_over = True 
+            game_result = True
 
 
         # When '0' is tapped, reset the view 
@@ -385,13 +393,16 @@ def main():
             else:
                 ui.draw_lobby_gui()         # normal lobby ui
         elif game_mode == "Level 1":
-            if playerBee.paused and not help_showing: 
-                ui.draw_level_pause_gui()   # level pause screen 
-            elif help_showing:
+            if help_showing:
                 ui.draw_help_menu()         # help screen (pause while we show)
                 playerBee.paused = True
+            elif game_over:
+                ui.draw_end_of_game_gui(gameWon=game_result)
+            elif playerBee.paused and not help_showing: 
+                ui.draw_level_pause_gui()   # level pause screen 
             else:
-                ui.draw_level_gui()         # normal level ui
+                ui.draw_level_gui(score=playerBee.score, health=playerBee.health_percentage, 
+                                timer_left_ms=playerBee.game_time_to_win, level=playerBee.level)         # normal level ui
         
 
         glPopMatrix()           # get rid of the matrix changes from gui drawing 

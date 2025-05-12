@@ -99,8 +99,12 @@ class Bee:
         self.temp_time_ran_for_pause = 0        # (for angry or recharging mode)
         self.temp_game_time_ran_for_pause = 0   # (for overall game time to play)
 
-        # game overall time to try to win 
-        self.game_time_to_win = 1000 * 120           # replace the 5 with num of seconds desired
+        # game stats
+        self.initial_game_timer = 1000 * 120        # in-game timer - replace the 5 with num of seconds desired
+        self.game_time_to_win = 1000 * 120           
+        self.score = 0                               # in-game score count
+        self.level = 1                               # in-game level
+        self.health_percentage = 100                 # in-game health bar
 
 
 
@@ -252,6 +256,10 @@ class Bee:
         self.paused = False 
         self.angry_bee_mode = False 
         self.is_recharging = False
+        self.score = 0 
+        self.health_percentage = 100
+        self.game_time_to_win = self.initial_game_timer
+        self.level = 1
         self.resetToOrigin()
 
     # create bee geometry 
