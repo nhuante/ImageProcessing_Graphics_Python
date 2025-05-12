@@ -52,4 +52,6 @@ pip install numpy pygame PyOpenGL
 * [Readme Formatting](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#links)
 * [RGB Values - Shades of Blue](https://www.rapidtables.com/web/color/blue-color.html)
 * [Minecraft Bee Inspo](https://minecraft.wiki/w/Bee)
-*
+* [Type Casting for Funciton Parameters](https://stackoverflow.com/questions/2489669/how-do-python-functions-handle-the-types-of-parameters-that-you-pass-in)
+* [GLUT Bitmap Fonts](https://www.opengl.org/resources/libraries/glut/spec3/node76.html)
+* 

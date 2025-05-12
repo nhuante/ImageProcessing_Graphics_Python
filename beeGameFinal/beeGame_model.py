@@ -78,7 +78,7 @@ class Bee:
         self.walk_angle = 0.0 # the angle (degrees) between the walk_direction and the z-axis [0, 0, 1] ()
         self.walk_speed_mp = 0.3
         self.walk_speed = self.walk_speed_mp * self.anim_speed # straightline and freeform walking speed ()
-        self.walk_vector = np.array([0.0, 10.0, 0.0]) # = walk_speed * walk_direction; updated for every iteration to translate the playerBee during walking ()
+        self.walk_vector = np.array([100.0, 10.0, 0.0]) # = walk_speed * walk_direction; updated for every iteration to translate the playerBee during walking ()
         self.height_offset = 0.0
         self.actively_moving = False
         self.in_reverse = False
@@ -89,11 +89,19 @@ class Bee:
         # angry mode 
         self.angry_bee_mode = False
         self.angry_mode_start_time = 0              # time angry mode period begins
-        self.recharge_start_time = 0                          # time recharging period begins
-        self.is_recharging = False                      # if currently recharging  
-        self.angry_mode_length = 1000 * 5      # replace the 5 with num of seconds desired
-        self.recharge_length = 1000 * 10   # replace the 5 with num of seconds desired
+        self.recharge_start_time = 0                # time recharging period begins
+        self.is_recharging = False                  # if currently recharging  
+        self.angry_mode_length = 1000 * 5           # replace the 5 with num of seconds desired
+        self.recharge_length = 1000 * 10            # replace the 5 with num of seconds desired
         self.current_countdown_num = -1
+
+        # timer when paused var 
+        self.temp_time_ran_for_pause = 0        # (for angry or recharging mode)
+        self.temp_game_time_ran_for_pause = 0   # (for overall game time to play)
+
+        # game overall time to try to win 
+        self.game_time_to_win = 1000 * 120           # replace the 5 with num of seconds desired
+
 
 
 
@@ -101,11 +109,37 @@ class Bee:
     def resetToOrigin(self):
         self.walk_direction = np.array([0.0, 0.0, 1.0])
         self.walk_angle = 0.0 
-        self.walk_vector = np.array([0.0, 0.0, 0.0])
+        self.walk_vector = np.array([100.0, 10.0, 0.0])
     
+    # activate pause mode 
+    def start_pause(self):
+        self.paused = True
+        current_time = pygame.time.get_ticks() 
+
+        # if currently counting for angry mode, maintain the time left until end of pause 
+        if self.angry_bee_mode:
+            # this is what we want to maintain
+            time_ran = current_time - self.angry_mode_start_time 
+            self.temp_time_ran_for_pause = time_ran
+        elif self.is_recharging:
+            # this is what we want to maintain 
+            time_ran =  current_time - self.recharge_start_time
+            self.temp_time_ran_for_pause = time_ran
+             
+        
+    # continuously called to handle pausing (to maintain angry or countdown modes)
+    def maintain_countdown_timers_when_paused(self):
+        current_time = pygame.time.get_ticks() 
+        # if angry, update the angry start time to maintain the time ran 
+        if self.angry_bee_mode:
+            self.angry_mode_start_time = current_time - self.temp_time_ran_for_pause
+        # if recharging, update the recharge start time to maintain the time ran 
+        elif self.is_recharging:
+            self.recharge_start_time = current_time - self.temp_time_ran_for_pause
+
 
     # Update bee's walk_direction and walk_vector based on walk_angle changed by key input
-    def update_walk_vector(self, reverse):
+    def update_walk_vector(self, reverse, boundaries):
         # rotate current walk vector by walk angle 
         rotated_direction = rotate_vector(self.walk_direction, self.walk_angle, rot_axis="Y")
         # print("walk direction:", rotated_direction)   # for testing
@@ -117,6 +151,14 @@ class Bee:
         else:
             self.walk_vector += self.walk_speed * rotated_direction
             self.in_reverse = False
+
+        # constrain to the garden's boundaries 
+        # boundaries = [ (x_min, x_max), (y_min, y_max), (z_min, z_max)]
+        for i in range(3):
+            # attempted_walk_vector_value = self.walk_vector[i]
+            min_value = boundaries[i][0]
+            max_value = boundaries[i][1]
+            self.walk_vector[i] = max(min(self.walk_vector[i], max_value), min_value)
         # print("walk vecctor:", self.walk_vector)      # for testing
 
     # update the animation parameters 
@@ -149,8 +191,11 @@ class Bee:
         self.pupil_position[0] += (self.pupil_target[0] - self.pupil_position[0]) * self.pupil_speed
         self.pupil_position[1] += (self.pupil_target[1] - self.pupil_position[1]) * self.pupil_speed
     
-
+    # only called when we start angry mode
     def activate_angry_mode(self):
+        # if paused, don't do anything
+        if self.paused:
+            pass
         current_time = pygame.time.get_ticks() 
 
         self.angry_bee_mode = True
@@ -161,13 +206,17 @@ class Bee:
         print(f"\nANGRY MODE ACTIVATED")
         print(f"     Countdown: {self.current_countdown_num}")
 
-
+    # called at every iteration of the main loop when actively mad or recharging
     def handle_angry_mode(self):
+        # if paused, don't do anything
+        if self.paused:
+            pass
         # get the current time 
         current_time = pygame.time.get_ticks() 
 
         # if angry mode already active and we still are angry 
         if self.angry_bee_mode:
+            # if currently paused, update the 
             # if angry time is up
             if current_time - self.angry_mode_start_time >= self.angry_mode_length:
                 self.angry_bee_mode = False
@@ -197,6 +246,13 @@ class Bee:
                 if sec_left <= (self.current_countdown_num - 1) * 1000:
                     self.current_countdown_num -= 1
                     print(f"     Countdown: {self.current_countdown_num}")
+
+    # resets when switching from lobby to level or vice versa 
+    def reset_bee_switching_rooms(self):
+        self.paused = False 
+        self.angry_bee_mode = False 
+        self.is_recharging = False
+        self.resetToOrigin()
 
     # create bee geometry 
     def draw_bee(self): 
@@ -465,8 +521,8 @@ class Camera:
     def __init__(self, view_mode = "front"):
         self.view_mode = view_mode
         # camera parameters
-        self.eye_pos = np.array([0.0, 10.0, 50.0]) # initial setting for the front view
-        self.look_at = np.array([0.0, 10.0, -1.0])
+        self.eye_pos = np.array([100.0, 10.0, 50.0]) # initial setting for the front view
+        self.look_at = np.array([100.0, 10.0, -1.0])
         self.view_up = np.array([0.0, 1.0, 0.0])
 
         # viewing parameters adjustable by keyboard input

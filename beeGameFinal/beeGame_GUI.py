@@ -13,7 +13,7 @@ import math
 # button class 
 class Button:
     def __init__(self, label, button_width = 100, button_height = 30, bottomLeft_x = 0, 
-                 bottomLeft_y = 0, screen_width = 500, screen_height = 500):
+                 bottomLeft_y = 0, screen_width = 500, screen_height = 500, initial_color=(0.2, 0.2, 0.2)):
         # placement and text properties
         self.label = label 
         self.button_width = button_width
@@ -28,7 +28,7 @@ class Button:
         self.pressed = False
 
         # color properties
-        self.initial_color = (0.2, 0.2, 0.2)
+        self.initial_color = initial_color
         self.pressing_color = (0.0, 1.0, 0.0)
         self.pressed_color = (0.0, 0.5, 0.0)
 
@@ -40,17 +40,17 @@ class Button:
             (self.bottomLeft_y <= mouse_y <= self.bottomLeft_y + self.button_height)
     
     # places the text within the button's space 
-    def draw_text(self):
+    def draw_text(self, font=GLUT_BITMAP_HELVETICA_18, color=(1.0, 1.0, 1.0)):
         text = self.label 
         y = self.bottomLeft_y + (self.button_height // 2.5) 
         x = self.bottomLeft_x + (self.button_width - len(text) * 9) // 2  # Center the text
 
-        color = (1.0, 1.0, 1.0) # white 
+        # color = (1.0, 1.0, 1.0) # white 
         glColor3f(*color)
 
         glRasterPos2f(x, y)
         for char in text:
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(char))
+            glutBitmapCharacter(font, ord(char))
 
     
     # draws the button as a rectangle 
@@ -77,9 +77,14 @@ class UI:
         self.win_width = win_width
         self.win_height = win_height
 
-        # lobby label is the default 
-        self.room_text = "Lobby"
+        # text elements
+        self.lobby_text = "Lobby"
+        self.level_text = "Level 1"
         self.room_text_font = GLUT_BITMAP_HELVETICA_18
+
+        self.score_text = "Score: XXXX"
+        self.bee_health_bar = "Bee Health: 100%"
+        self.level_timer = "Timer: XXXX"
 
         # buttons at the bottom (start game and help)
         self.num_of_bottom_buttons = 2
@@ -87,37 +92,75 @@ class UI:
         self.bottom_button_height = 40 
         self.bottom_gap_width = (self.win_width - self.num_of_bottom_buttons * self.bottom_button_width) // (self.num_of_bottom_buttons + 1)
 
-        # start game button 
+        # start game button - lobby
         self.start_game_button = Button(label="Start Game", button_width=self.bottom_button_width, 
                                         button_height=self.bottom_button_height,
 
                                         bottomLeft_x=self.bottom_gap_width,                             # change this to position it's x position 
-                                        bottomLeft_y=self.win_height-75, 
+                                        bottomLeft_y=self.win_height-110, 
 
                                         screen_height=self.win_height, 
-                                        screen_width=self.win_width)  
+                                        screen_width=self.win_width, 
+                                        
+                                        initial_color=(0, 91/255, 27/255))  
 
-        # help button
+        # help button - lobby
         self.help_button = Button(label="Help", button_width=self.bottom_button_width, 
                                   button_height=self.bottom_button_height,
 
                                   bottomLeft_x=self.bottom_gap_width * 2 + self.bottom_button_width,    # change this to position it's x position 
-                                  bottomLeft_y=self.win_height-75, 
+                                  bottomLeft_y=self.win_height-110, 
 
                                   screen_height=self.win_height, 
-                                  screen_width=self.win_width)  # Position the button
+                                  screen_width=self.win_width, 
+                                  
+                                  initial_color=(70/255, 139/255, 243/255))  # Position the button
+        
+        # help button - in-game 
+        self.help_game_button = Button(label="Help", button_width=self.bottom_button_width, 
+                                       button_height=self.bottom_button_height, 
+                                       
+                                       bottomLeft_x=self.bottom_gap_width * 2 + self.bottom_button_width * 1.5, 
+                                       bottomLeft_y=50, 
+                                       
+                                       screen_height=self.win_height, 
+                                       screen_width=self.win_width, 
+                                       
+                                       initial_color=(70/255, 139/255, 243/255))
+        
+        # backToLobby button - in-game 
+        self.toLobby_game_button = Button(label="Exit to Lobby", button_width=1.5*self.bottom_button_width, 
+                                       button_height=self.bottom_button_height, 
+                                       
+                                       bottomLeft_x=self.bottom_gap_width , 
+                                       bottomLeft_y=50, 
+                                       
+                                       screen_height=self.win_height, 
+                                       screen_width=self.win_width, 
+                                       
+                                       initial_color=(158/255, 28/255, 28/255))
 
     # draw text on the screen at position (x, y)
-    def draw_text(self, text, x, y, font=GLUT_BITMAP_HELVETICA_18):
-        glColor3f(1.0, 1.0, 1.0)  # White color for the text
+    def draw_text(self, text, x, y, font=GLUT_BITMAP_HELVETICA_18, color=(1.0, 1.0, 1.0)):
+        glColor3f(*color)  # White color for the text by default
         glRasterPos2f(x, y)
         for char in text:
             glutBitmapCharacter(font, ord(char))
 
+    # draws  a rectangle 
+    def draw_rectangle(self, bottomLeft_x, bottomLeft_y, topRight_x, topRight_y, color=(0,0,0)):
+        glColor3f(*color)
+        glBegin(GL_QUADS)
+        glVertex2f(bottomLeft_x, bottomLeft_y)
+        glVertex2f(topRight_x, bottomLeft_y)
+        glVertex2f(topRight_x, topRight_y)
+        glVertex2f(bottomLeft_x, topRight_y)
+        glEnd()
+
     # draw the gui elements (buttons) on the lobby screen
     def draw_lobby_gui(self):
         # draw the top text (lobby)
-        self.draw_text(self.room_text, self.win_width // 2 - 30, self.win_height - 30)
+        self.draw_text(self.lobby_text, self.win_width // 2 - 30, self.win_height - 30)
 
         # draw the buttons (start game and help)
         self.start_game_button.draw_text()
@@ -125,20 +168,78 @@ class UI:
         
         self.help_button.draw_text()
         self.help_button.draw_button()
-        
 
+        # draw header rectangle 
+        self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y= self.win_height-50, 
+                            topRight_x=810, topRight_y=810, 
+                            color=(64/255, 64/255, 64/255))
+
+    # draw the gui elements in the lobby (when paused)
+    def draw_lobby_pause_gui(self):
+        # draw the top text (level 1)
+        self.draw_text("Paused", self.win_width // 2 - 30, self.win_height // 2)
+
+        # draw banner rectangle 
+        self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y=self.win_height // 2 - 20, 
+                            topRight_x=810, topRight_y=self.win_height // 2 + 30, 
+                            color=(0, 153/255, 0))
+
+
+    # draw the gui elements in the level 
+    def draw_level_gui(self):
+        distance_from_top = self.win_height - 30
+        # draw the top text (level 1)
+        self.draw_text(self.level_text, self.win_width - 300, distance_from_top)
+
+        # draw other in-game stats in the header
+        self.draw_text(self.score_text, 50, distance_from_top)                      # score 
+        self.draw_text(self.bee_health_bar, 230, distance_from_top)                  # health 
+        self.draw_text(self.level_timer, self.win_width - 150, distance_from_top)    # timer 
+
+        # draw header rectangle 
+        self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y= self.win_height-50, 
+                            topRight_x=810, topRight_y=810, 
+                            color=(64/255, 64/255, 64/255))
+
+
+    # draw the gui elements in the level (when paused)
+    def draw_level_pause_gui(self):
+        # draw the top text (level 1)
+        self.draw_text("Paused", self.win_width // 2 - 30, self.win_height // 2)
+
+        # draw the buttons (toLobby, help)
+        self.toLobby_game_button.draw_text()
+        self.toLobby_game_button.draw_button()
+        
+        self.help_game_button.draw_text()
+        self.help_game_button.draw_button()
+
+        # draw banner rectangle 
+        self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y=self.win_height // 2 - 20, 
+                            topRight_x=810, topRight_y=self.win_height // 2 + 30, 
+                            color=(0, 153/255, 0))
 
     # check if a button was clicked. returns name of button or None 
-    def check_if_button_clicked(self, mouse_x, mouse_y):
+    def check_if_button_clicked(self, mouse_x, mouse_y, mode):
         # print(f"Mouse Position: x={mouse_x}, y={mouse_y}")  # Debugging the mouse position
         button_clicked = None 
 
-        if self.start_game_button.is_clicked(mouse_x, mouse_y):
-            button_clicked = "start"
-            print("start button clicked...")
-        elif self.help_button.is_clicked(mouse_x, mouse_y):
-            button_clicked = "help"
-            print("help button clicked...")
+        if mode == "Lobby":
+            if self.start_game_button.is_clicked(mouse_x, mouse_y):
+                button_clicked = "start"
+            elif self.help_button.is_clicked(mouse_x, mouse_y):
+                button_clicked = "help"
+        elif mode == "Level 1":
+            if self.toLobby_game_button.is_clicked(mouse_x, mouse_y):
+                button_clicked = "toLobby"
+            elif self.help_game_button.is_clicked(mouse_x, mouse_y):
+                button_clicked = "helpGame"
 
         return button_clicked
+
+
+
+    # handles when the help button is clicked 
+    def draw_help_menu(self):
+        pass
         

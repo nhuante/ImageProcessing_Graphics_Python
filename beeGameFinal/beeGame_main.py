@@ -17,25 +17,30 @@ def drawAxes():                                                             # dr
     glBegin(GL_LINES)                                                       # replace GL_LINES with GL_LINE_STRIP or GL_LINE_LOOP
     glColor3f(1.0, 0.0, 0.0)                                                # x-axis: red
     glVertex3f(0.0, 0.0, 0.0)                                               # v0
-    glVertex3f(100.0, 0.0, 0.0)                                             # v1
+    glVertex3f(200.0, 0.0, 0.0)                                             # v1
     glColor3f(0.0, 1.0, 0.0)                                                # y-axis: green
     glVertex3f(0.0, 0.0, 0.0)                                               # v0
-    glVertex3f(0.0, 100.0, 0.0)                                             # v1
+    glVertex3f(0.0, 200.0, 0.0)                                             # v1
     glColor3f(0.0, 0.0, 1.0)                                                # z-axis: blue
     glVertex3f(0.0, 0.0, 0.0)                                               # v0
-    glVertex3f(0.0, 0.0, 100.0)                                             # v1
+    glVertex3f(0.0, 0.0, 200.0)                                             # v1
     glEnd()
 
 # drawing the ground
 def drawGround():
-    ground_vertices = [[-500, -12.6, -500],
-                       [-500, -12.6, 500],
-                       [500, -12.6, 500],
-                       [500, -12.6, -500]]
+    # ground_vertices = [[-500, -12.6, -500], # top left
+    #                    [-500, -12.6, 500],  # bottom left 
+    #                    [500, -12.6, 500],   # 
+    #                    [500, -12.6, -500]]
+    
+    grass_vertices = [  [0, -12.6, -100],       # top left      
+                        [0, -12.6, 100],        # bottom left 
+                        [200, -12.6, 100],      # bottom right
+                        [200, -12.6, -100]]     # top right 
 
-    glColor3f(0.4, 0.4, 0.4)
+    glColor3f(0, 82/255, 0)
     glBegin(GL_QUADS)
-    for vertex in ground_vertices:
+    for vertex in grass_vertices:
         glVertex3fv(vertex)
     glEnd()
 
@@ -106,8 +111,14 @@ def main():
     key_q_on = False        # if key 'Q' is HELD on now
     key_e_on = False        # if key 'E' is HELD on now
 
-    # debugging mode 
-    debugging_mode = True 
+    # game mode 
+    game_mode = "Lobby"
+    help_showing = False
+
+    # garden properties 
+    garden_x_boundaries = (0, 200)
+    garden_y_boundaries = (-12, 2000)
+    garden_z_boundaries = (-100, 100)
 
 
     while True:
@@ -124,92 +135,106 @@ def main():
             # mouse input
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 # get mouse position 
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                # check if any of the buttons were clicked
-                button_clicked = ui.check_if_button_clicked(mouse_x, mouse_y)
-                # handle the correct button behavior 
-                if button_clicked == "start":           # start game button clicked 
-                    ui.room_text = "Level 1"
-                    print(" game is starting.....")
-                elif button_clicked == "help":
-                    print(" help menu loading.....")
+                mouse_x, mouse_y = pygame.mouse.get_pos()\
 
-                    
-            
-
+                # if not currently in level and not paused, don't check for mouse clicks 
+                if (game_mode == "Lobby" and not playerBee.paused) or (game_mode == "Level 1" and playerBee.paused):  
+                    # check if any of the buttons were clicked
+                    button_clicked = ui.check_if_button_clicked(mouse_x, mouse_y, game_mode)
+                    # handle the correct button behavior 
+                    if button_clicked == "start":           # start game button clicked 
+                        print(" game is starting.....")
+                        game_mode = "Level 1"       # update game mode 
+                        # playerBee.paused = False    # reset pausing when switching rooms
+                        playerBee.reset_bee_switching_rooms()
+                    elif button_clicked == "help":
+                        print(" help-lobby menu loading.....")
+                        # handle the ui change 
+                        # ui.handle_help_click()  
+                        help_showing = True
+                    elif button_clicked == "toLobby":
+                        print(" exiting to lobby....")
+                        game_mode = "Lobby"         # update game mode 
+                        # playerBee.paused = False    # reset pausing when switching rooms
+                        playerBee.reset_bee_switching_rooms()
+                    elif button_clicked == "helpGame":
+                        print(" help-inGame menu loading....")
+                
+                
             # keyboard input - key down
             elif event.type == pygame.KEYDOWN:
-                # reset input 
-                if event.key == pygame.K_0:                 # reset the current view 
-                    bResetModelMatrix = True
-                    camera.reset_views()
-                # switch camera view input 
-                elif event.key == pygame.K_SPACE:           # switch view modes: FIXME: list viewing modes here 
-                    camera.reset_views()
-                    camera.switch_view()                   
-                # bee movement paramter inputs 
-                elif event.key == pygame.K_RIGHT:           # start turning right
-                    key_right_on = True
-                elif event.key == pygame.K_LEFT:            # start turning left
-                    key_left_on = True
-                elif event.key == pygame.K_UP:
-                    key_up_on = True
-                elif event.key == pygame.K_DOWN:
-                    key_down_on = True
-                elif event.key == pygame.K_LSHIFT:
-                    key_shift_on = True
-                elif event.key == pygame.K_LCTRL:
-                    key_ctrl_on = True
-                # camera parameter inputs 
-                elif event.key == pygame.K_a:               # start looking left 
-                    key_a_on = True
-                elif event.key == pygame.K_d:               # start looking right 
-                    key_d_on = True
-                elif event.key == pygame.K_w:               # start looking up 
-                    key_w_on = True
-                elif event.key == pygame.K_s:               # start looking down 
-                    key_s_on = True
-                elif event.key == pygame.K_q:               # start zooming in
-                    key_q_on = True
-                elif event.key == pygame.K_e:               # start zooming out
-                    key_e_on = True
-                # modifying bee animation/movement speeds 
-                elif event.key == pygame.K_1:                       # decrease swing speed for animation
-                    playerBee.anim_speed -= 0.5
-                    print("Swing Speed:", playerBee.anim_speed)    
-                elif event.key == pygame.K_2:                       # increase swing speed for animation
-                    playerBee.anim_speed += 0.5
-                    print("Swing Speed:", playerBee.anim_speed)    
-                elif event.key == pygame.K_3:                       # decrease walk speed mp for walking
-                    playerBee.walk_speed_mp -= 0.1
-                    print("Walk Speed MP:", playerBee.walk_speed_mp)
-                elif event.key == pygame.K_4:                       # increase walk speed mp for walking
-                    playerBee.walk_speed_mp += 0.1
-                    print("Walk Speed MP:", playerBee.walk_speed_mp)
-                # reset bee to origin  
-                elif event.key == pygame.K_5:                       # reset playerBee to origin
-                    playerBee.resetToOrigin()
-                # pause the game 
-                elif event.key == pygame.K_p:
-                    playerBee.paused = not playerBee.paused       # will pause the current bee animation
-                    print(F"\nGAME PAUSED - {playerBee.paused} ")
-                # debugging keys 
-                elif event.key == pygame.K_y:                       # toggle debugging mode 
-                    debugging_mode = not debugging_mode
-                    if debugging_mode == False: playerBee.angry_bee_mode = False
-                    print(F"\nDEBUGGING MODE - {debugging_mode} ")
-                # elif event.key == pygame.K_m and debugging_mode:            # toggle angry mode indefinitely 
-                #     playerBee.angry_bee_mode = not playerBee.angry_bee_mode
-                #     if playerBee.anim_speed == 1.0: # in normal mode --> switching to mad mode
-                #         playerBee.anim_speed = 2.0
-                #         playerBee.walk_speed *= 3
-                #     else:                           # in angry mode  --> switching to normal mode
-                #         playerBee.anim_speed = 1.0
-                #         playerBee.walk_speed /= 3
-                #     print(F"\nANGRY BEE MODE - {playerBee.angry_bee_mode} ")
-                elif event.key == pygame.K_z and (not playerBee.angry_bee_mode and not playerBee.is_recharging):
-                    # angry_mode_activated = True
-                    playerBee.activate_angry_mode()
+                # if game paused, only listen for the `P` or `Esc` keys to unpause. no other keyboard input
+                if playerBee.paused:
+                    # pause the game 
+                    if event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
+                        playerBee.paused = not playerBee.paused       # will pause the current bee animation
+                        if playerBee.paused: playerBee.start_pause()
+                        print(F"\nGAME PAUSED - {playerBee.paused} ")
+                # if game not pause, listen for all keys 
+                else:
+                    # reset input 
+                    if event.key == pygame.K_0:                 # reset the current view 
+                        bResetModelMatrix = True
+                        camera.reset_views()
+                    # switch camera view input 
+                    elif event.key == pygame.K_SPACE:           # switch view modes: FIXME: list viewing modes here 
+                        camera.reset_views()
+                        camera.switch_view()                   
+                    # bee movement paramter inputs 
+                    elif event.key == pygame.K_RIGHT:           # start turning right
+                        key_right_on = True
+                    elif event.key == pygame.K_LEFT:            # start turning left
+                        key_left_on = True
+                    elif event.key == pygame.K_UP:
+                        key_up_on = True
+                    elif event.key == pygame.K_DOWN:
+                        key_down_on = True
+                    elif event.key == pygame.K_LSHIFT:
+                        key_shift_on = True
+                    elif event.key == pygame.K_LCTRL:
+                        key_ctrl_on = True
+                    # camera parameter inputs 
+                    elif event.key == pygame.K_a:               # start looking left 
+                        key_a_on = True
+                    elif event.key == pygame.K_d:               # start looking right 
+                        key_d_on = True
+                    elif event.key == pygame.K_w:               # start looking up 
+                        key_w_on = True
+                    elif event.key == pygame.K_s:               # start looking down 
+                        key_s_on = True
+                    elif event.key == pygame.K_q:               # start zooming in
+                        key_q_on = True
+                    elif event.key == pygame.K_e:               # start zooming out
+                        key_e_on = True
+                    # modifying bee animation/movement speeds 
+                    elif event.key == pygame.K_1:                       # decrease swing speed for animation
+                        playerBee.anim_speed -= 0.5
+                        print("Swing Speed:", playerBee.anim_speed)    
+                    elif event.key == pygame.K_2:                       # increase swing speed for animation
+                        playerBee.anim_speed += 0.5
+                        print("Swing Speed:", playerBee.anim_speed)    
+                    elif event.key == pygame.K_3:                       # decrease walk speed mp for walking
+                        playerBee.walk_speed_mp -= 0.1
+                        print("Walk Speed MP:", playerBee.walk_speed_mp)
+                    elif event.key == pygame.K_4:                       # increase walk speed mp for walking
+                        playerBee.walk_speed_mp += 0.1
+                        print("Walk Speed MP:", playerBee.walk_speed_mp)
+                    # un-pause the game 
+                    elif event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
+                        playerBee.paused = not playerBee.paused       # will pause the current bee animation
+                        if playerBee.paused: playerBee.start_pause()
+                        print(F"\nGAME PAUSED - {playerBee.paused} ")
+                    # # reset bee to origin  
+                    # elif event.key == pygame.K_5:                       # reset playerBee to origin
+                    #     playerBee.resetToOrigin()
+                    # # debugging keys 
+                    # elif event.key == pygame.K_y:                       # toggle debugging mode 
+                    #     debugging_mode = not debugging_mode
+                    #     if debugging_mode == False: playerBee.angry_bee_mode = False
+                    #     print(F"\nDEBUGGING MODE - {debugging_mode} ")
+                    elif event.key == pygame.K_z and (not playerBee.angry_bee_mode and not playerBee.is_recharging and not playerBee.paused):
+                        # angry_mode_activated = True
+                        playerBee.activate_angry_mode()
 
                 
             # keyboard input - key up
@@ -246,8 +271,11 @@ def main():
 
         
         #--------END: pygame.event.get()
+        # if game is paused, handle the pause for the countdown timers 
+        if playerBee.paused:
+            playerBee.maintain_countdown_timers_when_paused()
         # if game not paused, handle bee movement
-        if not playerBee.paused:
+        else:
             
             # update the bee's freeform movement parameters 
             if key_up_on or key_down_on:
@@ -262,7 +290,8 @@ def main():
                     playerBee.walk_angle -= 1
                 # print("walk angle: ", playerBee.walk_angle)
                 playerBee.walk_speed = playerBee.walk_speed_mp * playerBee.anim_speed
-                playerBee.update_walk_vector(reverse=reverse)
+                playerBee.update_walk_vector(reverse=reverse, 
+                                             boundaries=[garden_x_boundaries, garden_y_boundaries, garden_z_boundaries])
                 playerBee.actively_moving = True 
                 # print(F"\nBEE ACTIVELY MOVING - {playerBee.actively_moving} ")
             else:
@@ -271,9 +300,12 @@ def main():
                     # print(F"\nBEE ACTIVELY MOVING - {playerBee.actively_moving} ")
             # update the bee's height 
             if key_shift_on:
-                playerBee.height_offset += 0.2
+                wanted_offset = playerBee.height_offset + 0.2
+                playerBee.height_offset = min(wanted_offset, garden_y_boundaries[1])
+                
             elif key_ctrl_on:
-                playerBee.height_offset -= 0.2
+                wanted_offset = playerBee.height_offset - 0.2
+                playerBee.height_offset = max(wanted_offset, garden_y_boundaries[0])
 
             # handle angry mode 
             if playerBee.angry_bee_mode or playerBee.is_recharging:
@@ -331,12 +363,23 @@ def main():
         playerBee.update_animations()
         playerBee.draw_bee()
 
-        # Clear the screen and draw the Lobby GUI
-        # glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        set_2d_projection()
-        ui.draw_lobby_gui()
-        glPopMatrix()
-        set_3d_projection()
+        
+        set_2d_projection()     # switch to 2d mode so we can draw the gui 
+
+        # draw gui elements based on room
+        if game_mode == "Lobby":
+            if playerBee.paused: ui.draw_lobby_pause_gui()
+            else: ui.draw_lobby_gui()
+        elif game_mode == "Level 1":
+            ui.draw_level_gui()
+            if playerBee.paused: ui.draw_level_pause_gui()
+        
+        # check if help menu should be drawn in either room 
+        if help_showing:
+            ui.draw_help_menu()
+
+        glPopMatrix()           # get rid of the matrix changes from gui drawing 
+        set_3d_projection()     # and change back to 3d mode for the game environment elements
 
         # draw other entities in the scene
         drawAxes()
