@@ -36,14 +36,26 @@ def apply_transform_to_point(point, transform):
 
     # 2. Rotation around Y-axis
     angle_rad = np.radians(transform.rotation[0])  # assuming rotation is (angle, x, y, z)
-    if transform.rotation[1:] == (0,1,0):  # if rotating around Y-axis
-        cos_a = np.cos(angle_rad)
-        sin_a = np.sin(angle_rad)
+    # if transform.rotation[1:] == (0,1,0):  # if rotating around Y-axis
+    cos_a = np.cos(angle_rad)
+    sin_a = np.sin(angle_rad)
+    if transform.rotation[1:] == (0,1,0):
         rotation_matrix = np.array([
             [ cos_a, 0, sin_a],
             [ 0,     1, 0    ],
             [-sin_a, 0, cos_a]])
-        p = np.dot(rotation_matrix, p)  # matrix multiplication
+    elif transform.rotation[1:] == (1,0,0):
+        rotation_matrix = np.array([
+            [ 1,     0,     0     ],
+            [ 0,     cos_a, -sin_a],
+            [0,      sin_a, cos_a]])
+    elif transform.rotation[1:] == (0,0,1):
+        rotation_matrix = np.array([
+            [cos_a,  -sin_a, 0],
+            [sin_a,  cos_a,  0],
+            [0,      0,     1]])
+    p = np.dot(rotation_matrix, p)  # matrix multiplication
+    
 
     # 3. Translation
     p = p + np.array(transform.translation)

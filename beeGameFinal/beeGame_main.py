@@ -7,7 +7,7 @@ import numpy as np
 # import math 
 # import time 
 
-from beeGame_sceneObjects import Prop, create_grass_objects
+from beeGame_sceneObjects import Prop, create_grass_objects, create_flower_objects
 from beeGame_model import Bee, Camera
 from beeGame_GUI import UI
 
@@ -96,7 +96,11 @@ def main():
     playerBee = Bee() 
 
     # initialize all the props 
-    props = create_grass_objects(ui, "..")
+    props = []
+    for grass in create_grass_objects(ui, ".."):
+        props.append(grass)
+    for flower in create_flower_objects():
+        props.append(flower)
 
     # initialize the camera: camera parameters 
     camera = Camera(view_mode="corner1") # FIXME: set correct default view for the bee 
@@ -314,8 +318,8 @@ def main():
                 playerBee.maintain_countdown_timers_when_paused()
             # if game not paused, handle bee movement
             else:
-                if playerBee.angry_bee_mode: turn_speed = 2
-                else: turn_speed = 1
+                if playerBee.angry_bee_mode: turn_speed = playerBee.angry_turn_speed
+                else: turn_speed = playerBee.normal_turn_speed
                 # update the bee's freeform movement parameters 
                 if key_right_on or key_left_on:
                     reverse = key_down_on

@@ -39,9 +39,7 @@ class Prop:
 # draws all of the grass objects
 def create_grass_objects(ui, dots):
     # ui.draw_loading_screen(dots)
-    
     grass_objects = []
-    
     scaling = (3, 3, 3)
     height = -12.4
 
@@ -56,5 +54,22 @@ def create_grass_objects(ui, dots):
                                   rotation=(0, 1, 0, 0), 
                                   scale=scaling, 
                                   bv_type="AABB"))
-
     return grass_objects
+
+def create_flower_objects():
+    flower_objects = []
+    scaling = (1, 1, 1)
+    height = -10
+
+    x_min, x_max, z_min, z_max = 0, 200, -100, 100
+    length_along_z = z_max - z_min
+    for _ in range(1):
+        flower_objects.append(Prop(f"./resources/models/12974_crocus_flower_v1_l3.obj", 
+                                  translation=(random.random() * x_max,
+                                               height, 
+                                               (random.random() * length_along_z) + z_min), 
+                                  rotation=(-90, 1, 0, 0), 
+                                  scale=scaling, 
+                                  bv_type="AABB"))
+    return flower_objects
+    

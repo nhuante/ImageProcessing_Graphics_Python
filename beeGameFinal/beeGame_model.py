@@ -76,12 +76,18 @@ class Bee:
         # freeform movement motion parameters
         self.walk_direction = np.array([0.0, 0.0, 1.0]) # unit vector; initially aligned with z-axis ()
         self.walk_angle = 0.0 # the angle (degrees) between the walk_direction and the z-axis [0, 0, 1] ()
-        self.walk_speed_mp = 0.3
-        self.walk_speed = self.walk_speed_mp * self.anim_speed # straightline and freeform walking speed ()
+        self.walk_speed_mp = 0.7
+        self.walking_speed = 1.3
+        self.walk_speed = self.walk_speed_mp * self.walking_speed # straightline and freeform walking speed ()
         self.walk_vector = np.array([100.0, 10.0, 0.0]) # = walk_speed * walk_direction; updated for every iteration to translate the playerBee during walking ()
         self.height_offset = 0.0
         self.actively_moving = False
         self.in_reverse = False
+
+        # turning speed 
+        self.normal_turn_speed = 3
+        self.angry_turn_speed = 6
+
 
         # game controls 
         self.paused = False
