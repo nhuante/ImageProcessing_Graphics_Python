@@ -4,7 +4,8 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import numpy as np
-import math 
+# import math 
+# import time 
 
 from beeGame_sceneObjects import Prop, create_grass_objects
 from beeGame_model import Bee, Camera
@@ -76,7 +77,7 @@ def main():
     # set up screen 
     screen = (width, height)                                                # specify the screen size of the new program window
     display_surface = pygame.display.set_mode(screen, DOUBLEBUF | OPENGL)   # create a display of size 'screen', use double-buffers and OpenGL
-    pygame.display.set_caption('BeeGame - Do You Have Any Buzzing Talent?')     # set title of the program window
+    pygame.display.set_caption('BeeGame - Waiting To Load')     # set title of the program window
 
     # create UI 
     ui = UI(win_width=width, win_height=height)
@@ -94,11 +95,11 @@ def main():
     # initialize the playerBee: body dimensions and transformation parameters 
     playerBee = Bee() 
 
+    # initialize all the props 
+    props = create_grass_objects(ui, "..")
+
     # initialize the camera: camera parameters 
     camera = Camera(view_mode="corner1") # FIXME: set correct default view for the bee 
-
-    # initialize all the props 
-    props = create_grass_objects()
 
     # initialize the states of all the designated keys
 
@@ -126,12 +127,13 @@ def main():
 
     # garden properties 
     garden_x_boundaries = (0, 200)
-    garden_y_boundaries = (-12, 2000)
+    garden_y_boundaries = (-13, 2000)
     garden_z_boundaries = (-100, 100)
 
     # loading screen 
     loading_game = True 
-    loading_game_time = 5 * 1000
+    loading_game_time = 10 * 1000
+    num_dots = 1
 
 
     while True:
@@ -146,9 +148,8 @@ def main():
                 pygame.quit()
             
             # loading game scren (no input whatsoever)
-            # if loading_game:
-            #     # check if loading time is up 
-            #     pass
+            if loading_game:
+                pass
 
             # mouse input
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -298,89 +299,99 @@ def main():
 
         
         #--------END: pygame.event.get()
-        # if game is paused, handle the pause for the countdown timers 
-        if playerBee.paused:
-            playerBee.maintain_countdown_timers_when_paused()
-        # if game not paused, handle bee movement
+        # if game is loading, recheck the time passed 
+        if loading_game:
+            # recheck time 
+            current_time = pygame.time.get_ticks()
+            print(current_time)
+            if current_time >= loading_game_time:
+                loading_game = False
+
+        # if game is not loading, do all the game stuff
         else:
-            if playerBee.angry_bee_mode: turn_speed = 2
-            else: turn_speed = 1
-            # update the bee's freeform movement parameters 
-            if key_right_on or key_left_on:
-                reverse = key_down_on
-                if key_right_on and not reverse:    # forward or still and turning right -1
-                    playerBee.walk_angle -= turn_speed
-                elif key_right_on and reverse:      # backwards and turning right +1
-                    playerBee.walk_angle += turn_speed       
-                elif key_left_on and reverse:       # backwards and turning left -1
-                    playerBee.walk_angle -= turn_speed
-                elif key_left_on and not reverse:  # forwards and turning left +1
-                    playerBee.walk_angle += turn_speed   
-                # print("walk angle: ", playerBee.walk_angle)
-            if key_up_on or key_down_on:
-                reverse = key_down_on
-                playerBee.walk_speed = playerBee.walk_speed_mp * playerBee.anim_speed
-                playerBee.update_walk_vector(reverse=reverse, 
-                                             boundaries=[garden_x_boundaries, garden_y_boundaries, garden_z_boundaries])
-                playerBee.actively_moving = True 
-                # print(F"\nBEE ACTIVELY MOVING - {playerBee.actively_moving} ")
+            # if game is paused, handle the pause for the countdown timers 
+            if playerBee.paused:
+                playerBee.maintain_countdown_timers_when_paused()
+            # if game not paused, handle bee movement
             else:
-                if playerBee.actively_moving: 
-                    playerBee.actively_moving = False
+                if playerBee.angry_bee_mode: turn_speed = 2
+                else: turn_speed = 1
+                # update the bee's freeform movement parameters 
+                if key_right_on or key_left_on:
+                    reverse = key_down_on
+                    if key_right_on and not reverse:    # forward or still and turning right -1
+                        playerBee.walk_angle -= turn_speed
+                    elif key_right_on and reverse:      # backwards and turning right +1
+                        playerBee.walk_angle += turn_speed       
+                    elif key_left_on and reverse:       # backwards and turning left -1
+                        playerBee.walk_angle -= turn_speed
+                    elif key_left_on and not reverse:  # forwards and turning left +1
+                        playerBee.walk_angle += turn_speed   
+                    # print("walk angle: ", playerBee.walk_angle)
+                if key_up_on or key_down_on:
+                    reverse = key_down_on
+                    playerBee.walk_speed = playerBee.walk_speed_mp * playerBee.anim_speed
+                    playerBee.update_walk_vector(reverse=reverse, 
+                                                boundaries=[garden_x_boundaries, garden_y_boundaries, garden_z_boundaries])
+                    playerBee.actively_moving = True 
                     # print(F"\nBEE ACTIVELY MOVING - {playerBee.actively_moving} ")
-            # update the bee's height 
-            if key_shift_on:
-                wanted_offset = playerBee.height_offset + 0.2
-                playerBee.height_offset = min(wanted_offset, garden_y_boundaries[1])
-                
-            elif key_ctrl_on:
-                wanted_offset = playerBee.height_offset - 0.2
-                playerBee.height_offset = max(wanted_offset, garden_y_boundaries[0])
+                else:
+                    if playerBee.actively_moving: 
+                        playerBee.actively_moving = False
+                        # print(F"\nBEE ACTIVELY MOVING - {playerBee.actively_moving} ")
+                # update the bee's height 
+                if key_shift_on:
+                    wanted_offset = playerBee.height_offset + 0.2
+                    playerBee.height_offset = min(wanted_offset, garden_y_boundaries[1])
+                    
+                elif key_ctrl_on:
+                    wanted_offset = playerBee.height_offset - 0.2
+                    playerBee.height_offset = max(wanted_offset, garden_y_boundaries[0])
 
-            # handle angry mode 
-            if playerBee.angry_bee_mode or playerBee.is_recharging:
-                playerBee.handle_angry_mode()
-                # if playerBee.angry_bee_mode == False:
-                    # angry_mode_activated = False
+                # handle angry mode 
+                if playerBee.angry_bee_mode or playerBee.is_recharging:
+                    playerBee.handle_angry_mode()
+                    # if playerBee.angry_bee_mode == False:
+                        # angry_mode_activated = False
 
-        
-            # update camera parameters 
-            if key_a_on:
-                camera.tilt_angle_horizontal += 1
-            elif key_d_on:
-                camera.tilt_angle_horizontal -= 1
-            elif key_w_on:
-                # if camera located at negative z position, looking up is negative rotation about X
-                if camera.eye_pos[2] < 0: camera.tilt_angle_vertical -= 1
-                # if camera located at positive z position, looking up is positive rotation about X
-                else: camera.tilt_angle_vertical += 1
-            elif key_s_on:
-                # if camera located at negative z position, looking down is negative rotation about X
-                if camera.eye_pos[2] < 0: camera.tilt_angle_vertical += 1
-                # if camera located at positive z position, looking down is positive rotation about X
-                else: camera.tilt_angle_vertical -= 1
-            # update camera zooming 
-            if key_q_on:
-                camera.zoom_distance += 0.5 # had to change to 0.5 otherwise get a black screen when actively zooming in 
-            elif key_e_on:
-                camera.zoom_distance -= 0.5 # to match the speed of zooming in above      
+            
+                # update camera parameters 
+                if key_a_on:
+                    camera.tilt_angle_horizontal += 1
+                elif key_d_on:
+                    camera.tilt_angle_horizontal -= 1
+                elif key_w_on:
+                    # if camera located at negative z position, looking up is negative rotation about X
+                    if camera.eye_pos[2] < 0: camera.tilt_angle_vertical -= 1
+                    # if camera located at positive z position, looking up is positive rotation about X
+                    else: camera.tilt_angle_vertical += 1
+                elif key_s_on:
+                    # if camera located at negative z position, looking down is negative rotation about X
+                    if camera.eye_pos[2] < 0: camera.tilt_angle_vertical += 1
+                    # if camera located at positive z position, looking down is positive rotation about X
+                    else: camera.tilt_angle_vertical -= 1
+                # update camera zooming 
+                if key_q_on:
+                    camera.zoom_distance += 0.5 # had to change to 0.5 otherwise get a black screen when actively zooming in 
+                elif key_e_on:
+                    camera.zoom_distance -= 0.5 # to match the speed of zooming in above      
 
-        
-        # check if the game is over 
-        if playerBee.health_percentage <= 0:
-            game_over = True 
-            game_result = False
-        elif playerBee.score >= 100:
-            game_over = True 
-            game_result = True
+            
+            # check if the game is over 
+            if playerBee.health_percentage <= 0:
+                game_over = True 
+                game_result = False
+            elif playerBee.score >= 100:
+                game_over = True 
+                game_result = True
 
 
-        # When '0' is tapped, reset the view 
-        if (bResetModelMatrix):
-            glLoadIdentity()
-            modelMatrix = initmodelMatrix
-        glMultMatrixf(modelMatrix)
-        modelMatrix = glGetFloatv(GL_MODELVIEW_MATRIX)
+            # When '0' is tapped, reset the view 
+            if (bResetModelMatrix):
+                glLoadIdentity()
+                modelMatrix = initmodelMatrix
+            glMultMatrixf(modelMatrix)
+            modelMatrix = glGetFloatv(GL_MODELVIEW_MATRIX)
 
         glLoadIdentity()
         
@@ -403,7 +414,12 @@ def main():
         set_2d_projection()     # switch to 2d mode so we can draw the gui 
 
         # draw gui elements based on room
-        if game_mode == "Lobby":
+        if loading_game:
+            # loading screen 
+            num_dots = int((num_dots + 1) % 10) 
+            dots = num_dots * "."
+            ui.draw_loading_screen(dots)
+        elif game_mode == "Lobby":
             if playerBee.paused and not help_showing: 
                 ui.draw_lobby_pause_gui()   # lobby pause screen
             elif help_showing:  
@@ -430,6 +446,11 @@ def main():
         # draw other entities in the scene
         drawAxes()
         drawGround()
+        if loading_game:
+            dots = num_dots * "."
+            pygame.display.set_caption(f'BeeGame - Generating Garden{dots}')     # set title of the program window
+        else:
+            pygame.display.set_caption('Bee - Do You Have Any Buzzing Talent?')
 
         # props 
         playerBee.draw_fence()

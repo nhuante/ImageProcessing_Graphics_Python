@@ -6,7 +6,6 @@ from beeGame_OBJFileLoader import OBJ       # or wherever your OBJ class lives
 from beeGame_collisions import Transform, apply_transform_to_mesh
 import random 
 
-
 class Prop:
     # load the OBJ, apply the initial transformations, remember the bv type 
     def __init__(self, obj_filename: str, translation = (0, 0, 0), 
@@ -38,7 +37,9 @@ class Prop:
         
 
 # draws all of the grass objects
-def create_grass_objects():
+def create_grass_objects(ui, dots):
+    # ui.draw_loading_screen(dots)
+    
     grass_objects = []
     
     scaling = (3, 3, 3)
@@ -46,8 +47,9 @@ def create_grass_objects():
 
     x_min, x_max, z_min, z_max = 0, 200, -100, 100
     length_along_z = z_max - z_min
-    for _ in range(50):
-        grass_objects.append(Prop("./resources/models/Grass1.obj", 
+    for _ in range(150):
+        grass_num = random.randint(1, 3)
+        grass_objects.append(Prop(f"./resources/models/Grass{grass_num}.obj", 
                                   translation=(random.random() * x_max,
                                                height, 
                                                (random.random() * length_along_z) + z_min), 

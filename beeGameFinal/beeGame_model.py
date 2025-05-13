@@ -6,7 +6,7 @@ from OpenGL.GLU import *
 import numpy as np
 import math 
 import random 
-import time 
+# import time 
 
 # Complete the function for rotating the input `vector` around `rot_axis` by `angle_degrees`
 #      Construct a 3x3 rotation matrix (no need Homogeneous) and multiply it with the input vector

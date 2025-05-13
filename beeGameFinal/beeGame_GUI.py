@@ -261,6 +261,18 @@ class UI:
         self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y=self.win_height // 2 - 20, 
                             topRight_x=810, topRight_y=self.win_height // 2 + 30, 
                             color=(0, 153/255, 0))
+        
+    # draw the loading screen 
+    def draw_loading_screen(self, dots:str):
+        self.draw_text(f"Loading{dots}", self.win_width // 2 - 30, self.win_height // 2)
+        # draw banner rectangle 
+        self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y=self.win_height // 2 - 20, 
+                            topRight_x=810, topRight_y=self.win_height // 2 + 30, 
+                            color=(153/255, 0, 0))
+        # draw rectangle as the background of the menu - black 
+        self.draw_rectangle(bottomLeft_x=0, bottomLeft_y=0, 
+                            topRight_x=self.win_width, topRight_y=self.win_height, 
+                            color=(0, 0, 0))
 
     # check if a button was clicked. returns name of button or None 
     def check_if_button_clicked(self, mouse_x, mouse_y, mode, help):
@@ -331,7 +343,7 @@ class UI:
             self.draw_text(line, 25, self.win_height - top_offset)
             top_offset += 25
 
-        # draw rectangle as the background of the menu - dark brown 
+        # draw rectangle as the background of the menu - light brown 
         self.draw_rectangle(bottomLeft_x=22.5, bottomLeft_y=22.5, 
                             topRight_x=self.win_width-22.5, topRight_y=self.win_height-35, 
                             color=(212/255, 151/255, 89/255))
