@@ -32,11 +32,14 @@ def drawGround():
     #                    [-500, -12.6, 500],  # bottom left 
     #                    [500, -12.6, 500],   # 
     #                    [500, -12.6, -500]]
+    x_min, x_max = -20, 220
+    y_height = -12.6
+    z_min, z_max = -120, 120
     
-    grass_vertices = [  [0, -12.6, -100],       # top left      
-                        [0, -12.6, 100],        # bottom left 
-                        [200, -12.6, 100],      # bottom right
-                        [200, -12.6, -100]]     # top right 
+    grass_vertices = [  [x_min, y_height, z_min],       # top left      
+                        [x_min, y_height, z_max],        # bottom left 
+                        [x_max, y_height, z_max],      # bottom right
+                        [x_max, y_height, z_min]]     # top right 
 
     glColor3f(0, 82/255, 0)
     glBegin(GL_QUADS)
@@ -411,6 +414,7 @@ def main():
         # draw other entities in the scene
         drawAxes()
         drawGround()
+        playerBee.draw_fence()
 
         glPopMatrix()
         pygame.display.flip()

@@ -524,6 +524,140 @@ class Bee:
         #--------------Code above will create the geometry of the bee -------------------
         glPopMatrix() # DO NOT DELETE THIS
         
+    
+    
+    
+    
+    
+    
+    
+    
+    def draw_fence(self):
+        glColor3f(1.0, 1.0, 1.0)  # White color for the fence posts
+
+        # Define the dimensions of the garden and fence posts
+        fence_post_width = 5.0
+        fence_post_height = 30.0
+        fence_post_depth = 2.0  # Depth for the fence posts (to give them thickness)
+        post_spacing = 20.0  # Space between fence posts (float spacing)
+
+        # Define the bounds of the garden
+        x_min, x_max = 0, 200
+        z_min, z_max = -100, 100
+
+        # Draw fence posts along the four sides
+        # Front and back sides (along the z-axis)
+        x = x_min
+        while x <= x_max:
+            # Front side (z = -100)
+            glPushMatrix()
+            glTranslatef(x, 0, z_min - 1.5*fence_post_depth)  # Position along the front side
+            glScalef(fence_post_width, fence_post_height, fence_post_depth)
+            glutSolidCube(1)  # Draw a fence post
+            glPopMatrix()
+
+            for height_offset in [-(fence_post_height / 4), +(fence_post_height / 4)]:
+                if x == x_min:
+                    horizontal_offset = post_spacing / 2
+                elif 0 <= x_max - x <= post_spacing:
+                    horizontal_offset = -(post_spacing / 2)
+                else:
+                    horizontal_offset = 0
+
+                glPushMatrix()
+                glTranslatef(x + horizontal_offset, height_offset, z_min - 1.5*fence_post_depth)  # Position along the back side
+                glRotatef(90, 1, 0, 0)
+                # glRotatef(90, 0, 0, 1)
+                glScalef(post_spacing, fence_post_width, fence_post_depth)
+                glutSolidCube(1)  # Draw a fence post - vertical
+                glPopMatrix()
+
+            # Back side (z = 100)
+            glPushMatrix()
+            glTranslatef(x, 0, z_max + 1.5*fence_post_depth)  # Position along the back side
+            glScalef(fence_post_width, fence_post_height, fence_post_depth)
+            glutSolidCube(1)  # Draw a fence post - vertical
+            glPopMatrix()
+
+            for height_offset in [-(fence_post_height / 4), +(fence_post_height / 4)]:
+                if x == x_min:
+                    horizontal_offset = post_spacing / 2
+                elif 0 <= x_max - x <= post_spacing:
+                    horizontal_offset = -(post_spacing / 2)
+                else:
+                    horizontal_offset = 0
+                glPushMatrix()
+                glTranslatef(x + horizontal_offset, height_offset, z_max + 1.5*fence_post_depth)  # Position along the back side
+                glRotatef(90, 1, 0, 0)
+                # glRotatef(90, 0, 0, 1)
+                glScalef(post_spacing, fence_post_width, fence_post_depth)
+                glutSolidCube(1)  # Draw a fence post - vertical
+                glPopMatrix()
+
+            x += post_spacing  # Increment the position by post_spacing
+
+        # Left and right sides (along the x-axis)
+        z = z_min
+        while z <= z_max:
+
+            # Left side (x = 0)
+            glPushMatrix()
+            glTranslatef(x_min - 1.5*fence_post_depth, 0, z)  # Position along the left side
+            glRotatef(90, 0, 1, 0)
+            glScalef(fence_post_width, fence_post_height, fence_post_depth)
+            glutSolidCube(1)  # Draw a fence post
+            glPopMatrix()
+
+            for height_offset in [-(fence_post_height / 4), +(fence_post_height / 4)]:
+                if z == z_min:
+                    horizontal_offset = post_spacing / 2
+                elif 0 <= z_max - z <= post_spacing:
+                    horizontal_offset = -(post_spacing / 2)
+                else:
+                    horizontal_offset = 0
+                glPushMatrix()
+                glTranslatef(x_min - 1.5*fence_post_depth, height_offset, z + horizontal_offset)  # Position along the back side
+                glRotatef(90, 0, 0, 1)
+                glRotatef(90, 0, 1, 0)
+                # glRotatef(90, 0, 0, 1)
+                glScalef(post_spacing, fence_post_width, fence_post_depth)
+                glutSolidCube(1)  # Draw a fence post - vertical
+                glPopMatrix()
+
+            # Right side (x = 200)
+            glPushMatrix()
+            glTranslatef(x_max + 1.5*fence_post_depth, 0, z)  # Position along the right side
+            glRotatef(90, 0, 1, 0)
+            glScalef(fence_post_width, fence_post_height, fence_post_depth)
+            glutSolidCube(1)  # Draw a fence post
+            glPopMatrix()
+
+            for height_offset in [-(fence_post_height / 4), +(fence_post_height / 4)]:
+                if z == z_min:
+                    horizontal_offset = post_spacing / 2
+                elif 0 <= z_max - z <= post_spacing:
+                    horizontal_offset = -(post_spacing / 2)
+                else:
+                    horizontal_offset = 0
+                glPushMatrix()
+                glTranslatef(x_max + 1.5*fence_post_depth, height_offset, z + horizontal_offset)  # Position along the back side
+                glRotatef(90, 0, 0, 1)
+                glRotatef(90, 0, 1, 0)
+                # glRotatef(90, 0, 0, 1)
+                glScalef(post_spacing, fence_post_width, fence_post_depth)
+                glutSolidCube(1)  # Draw a fence post - vertical
+                glPopMatrix()
+
+            z += post_spacing  # Increment the position by post_spacing
+
+
+
+
+
+
+
+
+
 
 class Camera:
     def __init__(self, view_mode = "front"):
