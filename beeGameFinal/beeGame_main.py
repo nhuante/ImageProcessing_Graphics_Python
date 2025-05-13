@@ -6,8 +6,9 @@ from OpenGL.GLU import *
 import numpy as np
 import math 
 
+from beeGame_sceneObjects import Prop, create_grass_objects
 from beeGame_model import Bee, Camera
-from beeGame_GUI import Button, UI
+from beeGame_GUI import UI
 
 width, height = 800, 600                                                    # width and height of the screen created
 
@@ -96,6 +97,9 @@ def main():
     # initialize the camera: camera parameters 
     camera = Camera(view_mode="corner1") # FIXME: set correct default view for the bee 
 
+    # initialize all the props 
+    props = create_grass_objects()
+
     # initialize the states of all the designated keys
 
     # bee movement parameters 
@@ -125,6 +129,10 @@ def main():
     garden_y_boundaries = (-12, 2000)
     garden_z_boundaries = (-100, 100)
 
+    # loading screen 
+    loading_game = True 
+    loading_game_time = 5 * 1000
+
 
     while True:
         bResetModelMatrix = False
@@ -136,11 +144,16 @@ def main():
             # quitting the game, exiting the window basically 
             if event.type == pygame.QUIT:
                 pygame.quit()
+            
+            # loading game scren (no input whatsoever)
+            # if loading_game:
+            #     # check if loading time is up 
+            #     pass
 
             # mouse input
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 # get mouse position 
-                mouse_x, mouse_y = pygame.mouse.get_pos()\
+                mouse_x, mouse_y = pygame.mouse.get_pos()
 
                 # if not currently in level and not paused, don't check for mouse clicks 
                 if game_over or (game_mode == "Lobby" and not playerBee.paused) or (game_mode == "Level 1" and playerBee.paused):  
@@ -290,19 +303,22 @@ def main():
             playerBee.maintain_countdown_timers_when_paused()
         # if game not paused, handle bee movement
         else:
-            
+            if playerBee.angry_bee_mode: turn_speed = 2
+            else: turn_speed = 1
             # update the bee's freeform movement parameters 
+            if key_right_on or key_left_on:
+                reverse = key_down_on
+                if key_right_on and not reverse:    # forward or still and turning right -1
+                    playerBee.walk_angle -= turn_speed
+                elif key_right_on and reverse:      # backwards and turning right +1
+                    playerBee.walk_angle += turn_speed       
+                elif key_left_on and reverse:       # backwards and turning left -1
+                    playerBee.walk_angle -= turn_speed
+                elif key_left_on and not reverse:  # forwards and turning left +1
+                    playerBee.walk_angle += turn_speed   
+                # print("walk angle: ", playerBee.walk_angle)
             if key_up_on or key_down_on:
                 reverse = key_down_on
-                if key_right_on and not reverse:
-                    playerBee.walk_angle -= 1
-                elif key_right_on and reverse: 
-                    playerBee.walk_angle += 1
-                elif key_left_on and not reverse:
-                    playerBee.walk_angle += 1
-                elif key_right_on and reverse: 
-                    playerBee.walk_angle -= 1
-                # print("walk angle: ", playerBee.walk_angle)
                 playerBee.walk_speed = playerBee.walk_speed_mp * playerBee.anim_speed
                 playerBee.update_walk_vector(reverse=reverse, 
                                              boundaries=[garden_x_boundaries, garden_y_boundaries, garden_z_boundaries])
@@ -414,7 +430,11 @@ def main():
         # draw other entities in the scene
         drawAxes()
         drawGround()
+
+        # props 
         playerBee.draw_fence()
+        for prop in props:
+            prop.draw()
 
         glPopMatrix()
         pygame.display.flip()
