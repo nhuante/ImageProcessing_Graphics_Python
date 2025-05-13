@@ -94,7 +94,7 @@ def main():
     playerBee = Bee() 
 
     # initialize the camera: camera parameters 
-    camera = Camera(view_mode="front") # FIXME: set correct default view for the bee 
+    camera = Camera(view_mode="corner1") # FIXME: set correct default view for the bee 
 
     # initialize the states of all the designated keys
 

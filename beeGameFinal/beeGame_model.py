@@ -660,11 +660,11 @@ class Bee:
 
 
 class Camera:
-    def __init__(self, view_mode = "front"):
+    def __init__(self, view_mode = "corner1"):
         self.view_mode = view_mode
         # camera parameters
-        self.eye_pos = np.array([100.0, 10.0, 50.0]) # initial setting for the front view
-        self.look_at = np.array([100.0, 10.0, -1.0])
+        self.eye_pos = np.array([0.0, 50.0, 100.0]) 
+        self.look_at = np.array([100.0, 10.0, 0.0])
         self.view_up = np.array([0.0, 1.0, 0.0])
 
         # viewing parameters adjustable by keyboard input
@@ -684,56 +684,78 @@ class Camera:
     def switch_view(self):
         # Switch the current view_mode to the next in the cycle: 
         #   front -> side -> back -> (first_person) -> front -> side -> ...
-        view_modes = ["front", "side", "back", "first-person"]
+        view_modes = ["corner1", "corner2", "corner3", "corner4", "first-person", "follow"]
         self.view_mode = view_modes[(view_modes.index(self.view_mode) + 1) % len(view_modes)]
 
         
-        # Front view
-        if self.view_mode == "front":
-            self.eye_pos = np.array([0.0, 10.0, 10.0]) 
-            self.look_at = np.array([0.0, 10.0, -1.0])
+        # corner1 view
+        if self.view_mode == "corner1":
+            self.eye_pos = np.array([0.0, 50.0, 100.0]) 
+            self.look_at = np.array([100.0, 10.0, 0.0])
             self.view_up = np.array([0.0, 1.0, 0.0])
-        # Side view
-        elif self.view_mode == "side":
-            self.eye_pos = np.array([20.0, 10.0, 0.0]) 
-            self.look_at = np.array([-1.0, 10.0, 0.0])
+        # corner2 view
+        elif self.view_mode == "corner2":
+            self.eye_pos = np.array([200.0, 50.0, 100.0]) 
+            self.look_at = np.array([100.0, 10.0, 0.0])
             self.view_up = np.array([0.0, 1.0, 0.0])
-        # Back view
-        elif self.view_mode == "back":
-            self.eye_pos = np.array([60.0, 30.0, -80.0]) 
-            self.look_at = np.array([37.5, 15.0, 10.0])
+        # corner3 view
+        elif self.view_mode == "corner3":
+            self.eye_pos = np.array([200.0, 50.0, -100.0]) 
+            self.look_at = np.array([100.0, 10.0, 0.0])
             self.view_up = np.array([0.0, 1.0, 0.0])
+        # corner4 view
+        elif self.view_mode == "corner4":
+            self.eye_pos = np.array([0.0, 50.0, -100.0]) 
+            self.look_at = np.array([100.0, 10.0, 0.0])
+            self.view_up = np.array([0.0, 1.0, 0.0])
+        # follow view 
+        elif self.view_mode == "follow":
+            pass
+        # first person view 
         elif self.view_mode == "first-person":
             pass
+        
+        print(f"Camera View: {self.view_mode}")
         
         
     # Helper Function for Extra Credit First-Person View 
     #   Takes in a playerBee object and uses its information to determine the 
     #   new eye position and look at point of the camera
-    def update_fpv(self, playerBee):
+    def update_fpv(self, playerBee: Bee, follow: bool):
         # calculate the current position of the playerBee's head 
-        head_position = np.array([0.0, 13, 3.0])     # let's start at 13 (above the nose) on the y-axis and 5 on the z-axis
-        head_position = rotate_vector(head_position, playerBee.head_angle, "Y")     # rotation 1 - head angle (i, o controls)
+        if follow:
+            head_position = np.array([0.0, 30 + playerBee.height_offset, -45])    
+        else:
+            head_position = np.array([0.0, 10 + playerBee.height_offset, 5])    
+        # head_position = rotate_vector(head_position, playerBee.head_angle, "Y")     # rotation 1 - head angle (i, o controls)
         head_position = rotate_vector(head_position, playerBee.walk_angle, "Y")     # rotation 2 - walk angle (<-, -> controls)
         head_position += playerBee.walk_vector  # translate based on current walk vector
         new_eye_pos = head_position            
 
 
         # calculate the new look at point of the camera by looking at
-        base_gaze = np.array([0.0, 0.0, 1.0])       # let's start at a gaze of down the positive z-axis
-        base_gaze = rotate_vector(base_gaze, playerBee.head_angle, "Y")     # rotation 1 - head angle " "
+        if follow:
+            base_gaze = np.array([0.0, -0.3, 0.7])
+        else:
+            base_gaze = np.array([0.0, 0.0, 1.0])       # let's start at a gaze of down the positive z-axis
+        # base_gaze = rotate_vector(base_gaze, playerBee.head_angle, "Y")     # rotation 1 - head angle " "
         base_gaze = rotate_vector(base_gaze, playerBee.walk_angle, "Y")     # rotation 2 - walk angle " "
         new_lookat = new_eye_pos + base_gaze * 2    # extend along the gaze so the lookat point is not stuck inside the head
 
         return new_eye_pos, new_lookat
 
+
+
+
     # Task 8: Update camera parameters (eye_pos and look_at) based on the new 
     #               tilt_angle_horizontal, tilt_angle_vertical, and zoom_distance updated by key input (A, D, W, S, Q, E)
     def update_view(self, playerBee):
-        # if in first-person view, we update the view based on the playerBee's head position
-        if self.view_mode == "first-person":
+        # if in first-person view, we update the view based on the playerBee's direction
+        if self.view_mode in ["first-person", "follow"]:
+            if self.view_mode == "follow": follow = True 
+            else: follow = False
             # we handle this in a separate function 
-            new_eye_pos, new_lookat = self.update_fpv(playerBee)
+            new_eye_pos, new_lookat = self.update_fpv(playerBee, follow=follow)
         # if in any of the third-person views, we update the view based on keyboard input
         else:
             # calculate the current gaze vector
