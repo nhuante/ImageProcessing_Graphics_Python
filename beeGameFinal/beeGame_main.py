@@ -97,7 +97,7 @@ def main():
 
     # initialize all the props 
     props = []
-    for grass in create_grass_objects(ui, ".."):
+    for grass in create_grass_objects():
         props.append(grass)
     for flower in create_flower_objects():
         props.append(flower)
@@ -307,7 +307,7 @@ def main():
         if loading_game:
             # recheck time 
             current_time = pygame.time.get_ticks()
-            print(current_time)
+            # print(current_time)
             if current_time >= loading_game_time:
                 loading_game = False
 
