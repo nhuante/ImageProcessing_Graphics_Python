@@ -69,7 +69,7 @@ def read_object_positions_file(pathOfFile:str, ):
                 if type(line) != str:
                     continue
                 # looks like this "x_pos y_pos z_pos rot_x rot_y rot_z scale_x scale_y scale_z bv_type"
-                print(line)
+                # print(line)
                 line_items = line.split() 
                 if len(line_items) == 11: 
                     positions_formatted.append((float(line_items[0]), float(line_items[1]), float(line_items[2]),                   # translation
@@ -77,7 +77,7 @@ def read_object_positions_file(pathOfFile:str, ):
                                                 float(line_items[7]), float(line_items[8]), float(line_items[9]),                   # scale
                                                 line_items[10]))                                                                    # bv type
             positions_file.close()
-            print("--file found...extracted positions")
+            print(f"--{pathOfFile} file found...extracted {len(positions_formatted)} positions")
     except FileNotFoundError:
         # if it doesn't exist, let's create it 
         need_to_create_file = True
@@ -139,7 +139,7 @@ def create_objects_and_writeif(need_to_create_file:bool, positions_formatted:lis
 
             # grab the nect object's position tuple
             current_object = positions_formatted[line]
-            print(f"--extracted line {line} as a tuple: {current_object}--")
+            # print(f"--extracted line {line} as a tuple: {current_object}--")
 
             # unpack the tuple 
             pos_x = current_object[0]
@@ -148,7 +148,7 @@ def create_objects_and_writeif(need_to_create_file:bool, positions_formatted:lis
             rotation = (current_object[3], current_object[4], current_object[5], current_object[6])
             scaling = (current_object[7], current_object[8], current_object[9])
             bv_type = current_object[10]
-            print("--extraced positions--")
+            # print("--extracted positions--")
 
             # generate it in the world 
             prop_objects.append(Prop(f"./resources/models/{object_file_name}", 
@@ -159,11 +159,11 @@ def create_objects_and_writeif(need_to_create_file:bool, positions_formatted:lis
                                     scale=scaling, 
                                     bv_type=bv_type))
             if type_of_prop == "CROCUS": positions.append((pos_x, pos_y, pos_z))
-            print("--generated grass object from file positions--")
+            print(f"--generated {type_of_prop} object from file's line {line} as a tuple: {current_object}--")
     return prop_objects, positions
 
 # draws all of the grass objects
-def create_grass_objects():
+def create_grass_objects(num_grass_chunks:int):
     scaling = (3, 3, 3)
     height = -12.4
     rotation = (0, 1, 0, 0)
@@ -175,7 +175,7 @@ def create_grass_objects():
     print(f"--need_to_create_file: {need_to_create_file}, \n---positions_formatted:\n{positions_formatted[:10]}, \n--num_positions{num_positions}")
     
     if num_positions == 0:
-        num_positions = 150
+        num_positions = num_grass_chunks
 
     # generate the objects 
     grass_objects, positions = create_objects_and_writeif(need_to_create_file=need_to_create_file, positions_formatted=positions_formatted, 
@@ -189,32 +189,39 @@ def create_grass_objects():
     return grass_objects
 
 # draws all of the flower objects 
-def create_flower_objects():
-    scaling = (1, 1, 1)
+def create_flower_objects(num_flowers:int):
+    scalings = [(1, 1, 1), (0.5, 0.5, 0.5)]
     height = -10
     rotation = (-90.0, 1, 0, 0)
     bv_type = "AABB"
-    file_path = "./beeGameFinal/crocusFlowers_positions.txt"
-    flower_positions = []
+    file_path_1 = "./beeGameFinal/crocusFlowers_positions.txt"
+    file_path_2 = "./beeGameFinal/crocusFlowers_short_positions.txt"
 
     x_min, x_max, z_min, z_max = 15, 185, -85, 85
 
-    # try to open the file and read in positions 
-    need_to_create_file, positions_formatted, num_positions = read_object_positions_file(file_path)
+    all_objects, all_positions = [], []
+    
+    for index, file_path in enumerate([file_path_1, file_path_2]):
+        # try to open the file and read in positions 
+        need_to_create_file, positions_formatted, num_positions = read_object_positions_file(file_path)
 
-    if num_positions == 0:
-        num_positions = 3
+        if num_positions != num_flowers//2:
+            num_positions = num_flowers//2
+            need_to_create_file = True
+            print(f"--positions extracted doesn't match desired count...regenerating")
 
-    # generate the objects 
-    crocus_objects, positions = create_objects_and_writeif(need_to_create_file=need_to_create_file, positions_formatted=positions_formatted, 
-                                               num_positions=num_positions, path_of_file_to_write=file_path, 
-                                               obj_files=["12974_crocus_flower_v1_l3.obj"], 
-                                               default_scaling=scaling, default_height=height, default_rotation=rotation, 
-                                               default_bv_type=bv_type, 
-                                               xz_boundaries=(x_min, x_max, z_min, z_max), 
-                                               type_of_prop="CROCUS")
-
-    return crocus_objects, positions
+        # generate the objects 
+        crocus_objects, positions = create_objects_and_writeif(need_to_create_file=need_to_create_file, positions_formatted=positions_formatted, 
+                                                num_positions=num_positions, path_of_file_to_write=file_path, 
+                                                obj_files=["12974_crocus_flower_v1_l3.obj"], 
+                                                default_scaling=scalings[index], default_height=height, default_rotation=rotation, 
+                                                default_bv_type=bv_type, 
+                                                xz_boundaries=(x_min, x_max, z_min, z_max), 
+                                                type_of_prop="CROCUS")
+        all_objects += crocus_objects
+        all_positions += positions
+    
+    return all_objects, all_positions
 
 # draws the beehive 
 def create_beehive():

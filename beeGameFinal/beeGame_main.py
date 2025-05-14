@@ -103,7 +103,7 @@ def main():
     #     props.append(grass)
 
     # flowers 
-    flowers, flower_positions = create_flower_objects()
+    flowers, flower_positions = create_flower_objects(num_flowers=8)
     for flower in flowers:
         props.append(flower)
     for position in flower_positions:
@@ -115,9 +115,11 @@ def main():
     # pollen particles 
     pollen_particles = []
     for n in range(len(flower_positions)):
+        if n > (len(flower_positions)//2) - 1: pollen_height = 15
+        else: pollen_height = 35
         pollen_particles.append(Pollen( radius=2, color=(215/255, 215/255, 25/255), pollen_id=n+1, 
-                                        initial_x=flower_positions[n][0],         # x_pos 
-                                        initial_y=flower_positions[n][1] + 35 ,   # y_pos
+                                        initial_x=flower_positions[n][0]+2,         # x_pos 
+                                        initial_y=flower_positions[n][1] + pollen_height ,   # y_pos
                                         initial_z=flower_positions[n][2]))        # z_pos
 
     # initialize the camera: camera parameters 
@@ -363,11 +365,11 @@ def main():
                         # print(F"\nBEE ACTIVELY MOVING - {playerBee.actively_moving} ")
                 # update the bee's height 
                 if key_shift_on:
-                    wanted_offset = playerBee.height_offset + 0.2
+                    wanted_offset = playerBee.height_offset + 0.5
                     playerBee.height_offset = min(wanted_offset, garden_y_boundaries[1])
                     
                 elif key_ctrl_on:
-                    wanted_offset = playerBee.height_offset - 0.2
+                    wanted_offset = playerBee.height_offset - 0.5
                     playerBee.height_offset = max(wanted_offset, garden_y_boundaries[0])
 
                 # handle angry mode 
