@@ -7,8 +7,8 @@ import numpy as np
 # import math 
 # import time 
 
-from beeGame_sceneObjects import Prop, create_grass_objects, create_flower_objects
-from beeGame_model import Bee, Camera
+from beeGame_sceneObjects import Prop, create_grass_objects, create_flower_objects, create_beehive
+from beeGame_model import Bee, Camera, Pollen
 from beeGame_GUI import UI
 
 width, height = 800, 600                                                    # width and height of the screen created
@@ -97,10 +97,28 @@ def main():
 
     # initialize all the props 
     props = []
-    for grass in create_grass_objects():
-        props.append(grass)
-    for flower in create_flower_objects():
+    flower_positions = []
+    # grass
+    # for grass in create_grass_objects():
+    #     props.append(grass)
+
+    # flowers 
+    flowers, flower_positions = create_flower_objects()
+    for flower in flowers:
         props.append(flower)
+    for position in flower_positions:
+        print(position)
+
+    # beehive 
+    props.append(create_beehive())
+
+    # pollen particles 
+    pollen_particles = []
+    for n in range(len(flower_positions)):
+        pollen_particles.append(Pollen( radius=2, color=(215/255, 215/255, 25/255), pollen_id=n+1, 
+                                        initial_x=flower_positions[n][0],         # x_pos 
+                                        initial_y=flower_positions[n][1] + 35 ,   # y_pos
+                                        initial_z=flower_positions[n][2]))        # z_pos
 
     # initialize the camera: camera parameters 
     camera = Camera(view_mode="corner1") # FIXME: set correct default view for the bee 
@@ -136,7 +154,7 @@ def main():
 
     # loading screen 
     loading_game = True 
-    loading_game_time = 10 * 1000
+    loading_game_time = 2 * 1000
     num_dots = 1
 
 
@@ -413,6 +431,9 @@ def main():
         
         playerBee.update_animations()
         playerBee.draw_bee()
+        for pollen in pollen_particles:
+            pollen.draw_pollen()
+
 
         
         set_2d_projection()     # switch to 2d mode so we can draw the gui 

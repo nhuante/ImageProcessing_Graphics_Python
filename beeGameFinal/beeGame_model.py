@@ -8,6 +8,16 @@ import math
 import random 
 # import time 
 
+'''
+    THESE ARE OBJECTS THAT ARE MODELED USING OPENGL METHODS AND FUNCTIONS
+        THEY INCLUDE 
+        - BEE 
+        - FENCE 
+        - CAMERA 
+        - POLLEN
+'''
+
+
 # Complete the function for rotating the input `vector` around `rot_axis` by `angle_degrees`
 #      Construct a 3x3 rotation matrix (no need Homogeneous) and multiply it with the input vector
 #      rot_axis: "X", "Y", or "Z"
@@ -657,6 +667,38 @@ class Bee:
             z += post_spacing  # Increment the position by post_spacing
 
 
+class Pollen: 
+    def __init__(self, radius:float, color:tuple, pollen_id:int, initial_x:float, initial_y:float, initial_z:float):
+        self.x_pos, self.initial_x = initial_x, initial_x
+        self.y_pos, self.initial_y = initial_y, initial_y
+        self.z_pos, self.initial_z = initial_z, initial_z
+        self.pollen_id = pollen_id
+        self.color = color 
+        self.radius = radius
+
+        self.carried = False 
+        self.in_beehive = False
+        self.falling = False
+
+
+    def draw_pollen(self):
+        if self.in_beehive:
+            # should not render at all
+            pass 
+        elif self.carried:
+            # offset from the bee's current position 
+            pass 
+        elif self.falling:
+            # should keep falling until hits the ground --> go to spawn location 
+            pass 
+        else:
+            # go to spawn position 
+            pass
+        glPushMatrix()
+        glColor3f(*self.color)
+        glTranslatef(self.x_pos, self.y_pos, self.z_pos)
+        glutSolidSphere(self.radius, 6, 6)
+        glPopMatrix()
 
 
 

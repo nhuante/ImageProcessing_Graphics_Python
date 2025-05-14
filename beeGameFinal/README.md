@@ -54,4 +54,4 @@ pip install numpy pygame PyOpenGL
 * [Minecraft Bee Inspo](https://minecraft.wiki/w/Bee)
 * [Type Casting for Funciton Parameters](https://stackoverflow.com/questions/2489669/how-do-python-functions-handle-the-types-of-parameters-that-you-pass-in)
 * [GLUT Bitmap Fonts](https://www.opengl.org/resources/libraries/glut/spec3/node76.html)
-* 
+* [GLUT Solid Sphere Function](https://www.opengl.org/resources/libraries/glut/spec3/node81.html)

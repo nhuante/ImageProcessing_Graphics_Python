@@ -6,6 +6,16 @@ from beeGame_OBJFileLoader import OBJ       # or wherever your OBJ class lives
 from beeGame_collisions import Transform, apply_transform_to_mesh
 import random 
 
+'''
+    THESE ARE OBJECTS THAT ARE IMPORTED FROM OBJ FILES AND MIGHT REQURE ACCESSING CACHED POSITIONS
+        THEY INCLUDE 
+        - PROP [CLASS]
+        - GRASS 
+        - FLOWERS
+        - BEEHIVE
+        - 
+'''
+
 class Prop:
     # load the OBJ, apply the initial transformations, remember the bv type 
     def __init__(self, obj_filename: str, translation = (0, 0, 0), 
@@ -86,6 +96,7 @@ def create_objects_and_writeif(need_to_create_file:bool, positions_formatted:lis
                                type_of_prop:str="default_prop_name"):
     # initialize our objects list 
     prop_objects = []
+    positions = []
 
     # unpack arguments 
     x_min, x_max, z_min, z_max = xz_boundaries[0], xz_boundaries[1], xz_boundaries[2], xz_boundaries[3]
@@ -115,6 +126,7 @@ def create_objects_and_writeif(need_to_create_file:bool, positions_formatted:lis
             
             # save it's position to the file 
             object_positions_file.write(f"{random_x_pos} {default_height} {random_z_pos} {default_rotation[0]} {default_rotation[1]} {default_rotation[2]} {default_rotation[3]} {default_scaling[0]} {default_scaling[1]} {default_scaling[2]} {default_bv_type}\n")
+            if type_of_prop == "CROCUS": positions.append((random_x_pos, default_height, random_z_pos))
         object_positions_file.close() 
         print(f"--random positions generated for {type_of_prop} and written to file")
     # if no file creation needed, 
@@ -146,8 +158,9 @@ def create_objects_and_writeif(need_to_create_file:bool, positions_formatted:lis
                                     rotation=rotation, 
                                     scale=scaling, 
                                     bv_type=bv_type))
+            if type_of_prop == "CROCUS": positions.append((pos_x, pos_y, pos_z))
             print("--generated grass object from file positions--")
-    return prop_objects
+    return prop_objects, positions
 
 # draws all of the grass objects
 def create_grass_objects():
@@ -165,7 +178,7 @@ def create_grass_objects():
         num_positions = 150
 
     # generate the objects 
-    grass_objects = create_objects_and_writeif(need_to_create_file=need_to_create_file, positions_formatted=positions_formatted, 
+    grass_objects, positions = create_objects_and_writeif(need_to_create_file=need_to_create_file, positions_formatted=positions_formatted, 
                                                num_positions=num_positions, path_of_file_to_write=file_path, 
                                                obj_files=["Grass1.obj", "Grass2.obj", "Grass3.obj"], 
                                                default_scaling=scaling, default_height=height, default_rotation=rotation, 
@@ -175,16 +188,16 @@ def create_grass_objects():
 
     return grass_objects
 
+# draws all of the flower objects 
 def create_flower_objects():
     scaling = (1, 1, 1)
     height = -10
     rotation = (-90.0, 1, 0, 0)
     bv_type = "AABB"
     file_path = "./beeGameFinal/crocusFlowers_positions.txt"
+    flower_positions = []
 
     x_min, x_max, z_min, z_max = 15, 185, -85, 85
-
-    positions = [(32, 65), (143, 12), (80, -77)]
 
     # try to open the file and read in positions 
     need_to_create_file, positions_formatted, num_positions = read_object_positions_file(file_path)
@@ -193,7 +206,7 @@ def create_flower_objects():
         num_positions = 3
 
     # generate the objects 
-    crocus_objects = create_objects_and_writeif(need_to_create_file=need_to_create_file, positions_formatted=positions_formatted, 
+    crocus_objects, positions = create_objects_and_writeif(need_to_create_file=need_to_create_file, positions_formatted=positions_formatted, 
                                                num_positions=num_positions, path_of_file_to_write=file_path, 
                                                obj_files=["12974_crocus_flower_v1_l3.obj"], 
                                                default_scaling=scaling, default_height=height, default_rotation=rotation, 
@@ -201,18 +214,24 @@ def create_flower_objects():
                                                xz_boundaries=(x_min, x_max, z_min, z_max), 
                                                type_of_prop="CROCUS")
 
-    return crocus_objects
+    return crocus_objects, positions
 
-    # for index in range(3):
-    #     # random_x_position = random.random() * x_max
-    #     # random_z_position = (random.random() * length_along_z) + z_min
-    #     # if random_x_position 
-    #     flower_objects.append(Prop(f"./resources/models/12974_crocus_flower_v1_l3.obj", 
-    #                               translation=(positions[index][0],
-    #                                            height, 
-    #                                            positions[index][1]), 
-    #                               rotation=(-90, 1, 0, 0), 
-    #                               scale=scaling, 
-    #                               bv_type="AABB"))
-    # return flower_objects
-    
+# draws the beehive 
+def create_beehive():
+    scaling = (0.15, 0.15, 0.15)
+    pos_x = 50
+    pos_z = -50
+    height = 10
+
+    rotation = (-90.0, 1, 0, 0)
+    bv_type = "AABB"
+
+    beehive = Prop(f"./resources/models/beehive.obj", 
+                    translation=( pos_x,
+                                  height, 
+                                  pos_z), 
+                    rotation=rotation, 
+                    scale=scaling, 
+                    bv_type=bv_type)
+
+    return beehive
