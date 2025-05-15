@@ -10,6 +10,7 @@ import numpy as np
 from beeGame_sceneObjects import Prop, create_grass_objects, create_flower_objects, create_beehive
 from beeGame_model import Bee, Camera, Pollen, Moth
 from beeGame_GUI import UI
+from beeGame_collisions import collisionTest_AABBs, draw_AABB
 
 width, height = 800, 600                                                    # width and height of the screen created
 
@@ -382,7 +383,8 @@ def main():
                     reverse = key_down_on
                     playerBee.walk_speed = playerBee.walk_speed_mp * playerBee.anim_speed
                     playerBee.update_walk_vector(reverse=reverse, 
-                                                boundaries=[garden_x_boundaries, garden_y_boundaries, garden_z_boundaries])
+                                                boundaries=[garden_x_boundaries, garden_y_boundaries, garden_z_boundaries], 
+                                                obstacles=props)
                     playerBee.actively_moving = True 
                     # print(F"\nBEE ACTIVELY MOVING - {playerBee.actively_moving} ")
                 else:
@@ -475,6 +477,11 @@ def main():
         # draw all the props that were imported as obj files 
         for prop in props:
             prop.draw()
+            curr_position = prop.t.translation
+            # mins, maxs, _, _ = prop.obj.cal_minMax()
+            # mins, maxs = prop.get_bounding_volume()
+            mins, maxs, center, _ = prop.obj.cal_minMax()
+            draw_AABB(mins, maxs, center)
 
         
         set_2d_projection()     # switch to 2d mode so we can draw the gui 

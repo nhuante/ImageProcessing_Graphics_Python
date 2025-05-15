@@ -8,6 +8,7 @@ import math
 import random 
 # import time 
 from beeGame_collisions import draw_AABB, draw_boundingSphere, collisionTest_AABBs, collisionTest_spheres
+import beeGame_OBJFileLoader
 
 '''
     THESE ARE OBJECTS THAT ARE MODELED USING OPENGL METHODS AND FUNCTIONS
@@ -162,18 +163,18 @@ class Bee:
 
 
     # Update bee's walk_direction and walk_vector based on walk_angle changed by key input
-    def update_walk_vector(self, reverse, boundaries):
+    def update_walk_vector(self, reverse, boundaries, obstacles):
         # rotate current walk vector by walk angle 
         rotated_direction = rotate_vector(self.walk_direction, self.walk_angle, rot_axis="Y")
         # print("walk direction:", rotated_direction)   # for testing
 
         # update walk vector 
         if reverse:
-            self.walk_vector -= self.walk_speed * rotated_direction
-            self.in_reverse = True
+            potent_walk_vector = self.walk_vector - (self.walk_speed * rotated_direction)
+            potent_in_reverse = True
         else:
-            self.walk_vector += self.walk_speed * rotated_direction
-            self.in_reverse = False
+            potent_walk_vector = self.walk_vector + (self.walk_speed * rotated_direction)
+            potent_in_reverse = False
 
         # constrain to the garden's boundaries 
         # boundaries = [ (x_min, x_max), (y_min, y_max), (z_min, z_max)]
@@ -181,8 +182,28 @@ class Bee:
             # attempted_walk_vector_value = self.walk_vector[i]
             min_value = boundaries[i][0]
             max_value = boundaries[i][1]
-            self.walk_vector[i] = max(min(self.walk_vector[i], max_value), min_value)
+            potent_walk_vector[i] = max(min(potent_walk_vector[i], max_value), min_value)
         # print("walk vecctor:", self.walk_vector)      # for testing
+
+        # build the potential aabb 
+        collision_zone = (2.35, 2.35, 2.35)
+        bee_potential_mins = (potent_walk_vector[0] - collision_zone[0], 
+                              potent_walk_vector[1] + self.height_offset - collision_zone[1], 
+                              potent_walk_vector[2] - collision_zone[2])
+        bee_potential_maxs = (potent_walk_vector[0] + collision_zone[0], 
+                              potent_walk_vector[1] + self.height_offset + collision_zone[1], 
+                              potent_walk_vector[2] + collision_zone[2])
+        
+        # check for collisions 
+        for prop in obstacles:
+            obs_min, obs_max = prop.get_bounding_volume()
+            if collisionTest_AABBs(bee_potential_mins, bee_potential_maxs, 
+                                   obs_min, obs_max):
+                return False 
+        
+        # no collision detected, apply the new walk vector 
+        self.walk_vector = potent_walk_vector
+        return True
 
     # update the animation parameters 
     def update_animations(self):
@@ -812,6 +833,8 @@ class Moth:
         if draw_bounding_boxes:
             draw_AABB(min_coords, max_coords, center=current_pos)
 
+        # if collided with it's target positions (either the bee or the next checkpoint in it's patrol route)
+        # if collisionTest_AABBs(min_coords1=min_coords, max_coords1=max_coords, )
         if  np.abs(current_pos[0] - current_target[0])  < distance and \
             np.abs(current_pos[1] - current_target[1])  < distance and \
             np.abs(current_pos[2] - current_target[2])  < distance:
@@ -827,7 +850,7 @@ class Moth:
                     bee.score += 10
                 else:
                     bee.health_percentage -= 20
-                    
+
                 self.chasing_bee = False 
                 self.target_x_pos = self.target_positions[0][0]
                 self.target_y_pos = self.target_positions[0][1]

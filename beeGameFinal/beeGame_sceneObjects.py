@@ -23,10 +23,10 @@ class Prop:
         # create OBJ instance
         self.obj = OBJ(obj_filename, swapyz=False)
         # initial transformation
-        t = Transform(translation=translation, 
+        self.t = Transform(translation=translation, 
                       rotation=rotation, 
                       scale=scale)
-        apply_transform_to_mesh(self.obj, t)
+        apply_transform_to_mesh(self.obj, self.t)
         # take note of bv choice
         self.bv_type = bv_type
 

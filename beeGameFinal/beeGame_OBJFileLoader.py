@@ -153,3 +153,4 @@ class OBJ:
         radius = 0.5 * max(max(dx, dy), dz)
 
         return min_coords, max_coords, center, radius
+    
