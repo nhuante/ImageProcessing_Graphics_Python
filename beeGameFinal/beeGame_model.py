@@ -215,32 +215,30 @@ class Bee:
                 self.walk_vector[i] = potent_new_walk_vector[i]
         return True
 
-        # for i in range(3):
-        #     # attempted_walk_vector_value = self.walk_vector[i]
-        #     min_value = boundaries[i][0]
-        #     max_value = boundaries[i][1]
-        #     potent_walk_vector[i] = max(min(potent_walk_vector[i], max_value), min_value)
-        # # print("walk vecctor:", self.walk_vector)      # for testing
+    def update_height_offset(self, height_offset_per, garden_y_boundaries, obstacles):
+        if height_offset_per != 0.0:
+            # clamp proposed height offset to the garden boundaries 
+            wanted = self.height_offset + height_offset_per
+            wanted_offset = max(min(wanted, garden_y_boundaries[1]), garden_y_boundaries[0])
 
-        # # build the potential aabb 
-        # collision_zone = (2.35, 2.35, 2.35)
-        # bee_potential_mins = (potent_walk_vector[0] - collision_zone[0], 
-        #                       potent_walk_vector[1] + self.height_offset - collision_zone[1], 
-        #                       potent_walk_vector[2] - collision_zone[2])
-        # bee_potential_maxs = (potent_walk_vector[0] + collision_zone[0], 
-        #                       potent_walk_vector[1] + self.height_offset + collision_zone[1], 
-        #                       potent_walk_vector[2] + collision_zone[2])
-        
-        # # check for collisions 
-        # for prop in obstacles:
-        #     obs_min, obs_max = prop.get_bounding_volume()
-        #     if collisionTest_AABBs(bee_potential_mins, bee_potential_maxs, 
-        #                            obs_min, obs_max):
-        #         return False 
-        
-        # # no collision detected, apply the new walk vector 
-        # self.walk_vector = potent_walk_vector
-        # return True
+            # build the aabb box and check if 
+            cx, cz = self.walk_vector[0], self.walk_vector[2]
+            cy = self.walk_vector[1] + wanted_offset 
+            collision_radius = 2
+            minc = (cx - collision_radius, cy - collision_radius, cz - collision_radius)
+            maxc = (cx + collision_radius, cy + collision_radius, cz + collision_radius)
+
+            # test for collisions 
+            blocked = False 
+            for prop in obstacles:
+                obstacle_min, obstacle_max = prop.get_bounding_volume() 
+                if collisionTest_AABBs(minc, maxc, obstacle_min, obstacle_max):
+                    blocked = True 
+                    break 
+            # if not blocked by any prop, allow movement to the desired x position 
+            if not blocked:
+                self.height_offset = wanted_offset
+            
 
     # update the animation parameters 
     def update_animations(self):

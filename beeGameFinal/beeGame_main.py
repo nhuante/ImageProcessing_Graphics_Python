@@ -402,14 +402,17 @@ def main():
                     if playerBee.actively_moving: 
                         playerBee.actively_moving = False
                         # print(F"\nBEE ACTIVELY MOVING - {playerBee.actively_moving} ")
-                # update the bee's height 
+
+
+
+                # update the bee's height
+                height_offset_per = 0.0 
                 if key_shift_on:
-                    wanted_offset = playerBee.height_offset + 0.5
-                    playerBee.height_offset = min(wanted_offset, garden_y_boundaries[1])
-                    
+                    height_offset_per = +0.5
+                    playerBee.update_height_offset(height_offset_per, garden_y_boundaries, (props + flowers))
                 elif key_ctrl_on:
-                    wanted_offset = playerBee.height_offset - 0.5
-                    playerBee.height_offset = max(wanted_offset, garden_y_boundaries[0])
+                    height_offset_per = -0.5
+                    playerBee.update_height_offset(height_offset_per, garden_y_boundaries, (props + flowers))
 
                 # handle angry mode 
                 if playerBee.angry_bee_mode or playerBee.is_recharging:
