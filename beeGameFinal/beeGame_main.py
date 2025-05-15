@@ -78,9 +78,9 @@ def generate_flowers_pollen(force_regnerate:bool):
     pollen_particles = []
     for n in range(len(flower_positions)):
         if n > (len(flower_positions)//2) - 1: 
-            pollen_height = flower_positions[n][1] + (70 * 3.5) + 8
+            pollen_height = flower_positions[n][1] + (70 * 3.5) + 12
         else: 
-            pollen_height = flower_positions[n][1] + (70 * 2) + 8
+            pollen_height = flower_positions[n][1] + (70 * 2) + 12
         pollen_particles.append(Pollen( radius=2, color=(215/255, 215/255, 25/255), pollen_id=n+1, 
                                         initial_x=flower_positions[n][0],                 # x_pos 
                                         initial_y=pollen_height ,  # y_pos

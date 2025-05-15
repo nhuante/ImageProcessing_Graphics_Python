@@ -763,7 +763,7 @@ class Flower:
 
         glPushMatrix()
         # glTranslatef(0, self.stem_height * 0.8, 0)
-        glTranslatef(self.pos[0], (self.stem_height * self.scale[1]) / 2, self.pos[2])
+        glTranslatef(self.pos[0], ((self.stem_height * self.scale[1]) / 2) + self.pos[1], self.pos[2])
         glScalef(*self.scale)
 
         # 1) Stem
@@ -815,7 +815,7 @@ class Flower:
 
 def create_flowers(num_flowers:int, force_regenerate:bool):
     scalings = [(2, 2, 2), (3.5, 3.5, 3.5)]
-    height = 0
+    height = -12
     rotation = (0, 1, 0, 0)
     bv_type = "AABB"
     file_path_1 = "./beeGameFinal/crocusFlowers_positions.txt"
