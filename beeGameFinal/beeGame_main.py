@@ -122,7 +122,8 @@ def main():
     #     props.append(grass)
 
     # beehive 
-    props.append(create_beehive())
+    beehive = create_beehive()
+    props.append(beehive)
 
 
     # FIXME: flowers and pollen 
@@ -142,7 +143,7 @@ def main():
         moth_enemies.append(Moth(moth_id=n, 
                                  initial_x=25, initial_y=40, initial_z=75, 
                                  target_positions=moth_target_positions[n]))
-        print(f"---done drawing moth with id: {moth_enemies[0].moth_id}")
+        print(f"---done drawing moth with id: {moth_enemies[n].moth_id}")
 
 
 
@@ -325,6 +326,36 @@ def main():
                         playerBee.paused = not playerBee.paused       # will pause the current bee animation
                         if playerBee.paused: playerBee.start_pause()
                         print(F"\nGAME PAUSED - {playerBee.paused} ")
+                    # pick up pollen -----------------------------------------------------
+                    elif event.key == pygame.K_x:
+                        # if not already carrying a piece of pollen 
+                        if playerBee.carrying_pollen == None: 
+                            # check if within range of a piece of pollen 
+                            bee_min, bee_max = playerBee.get_bounding_volume()
+                            for pollen in pollen_particles:
+                                # if this piece of pollen is not currently being carried 
+                                pollen_min, pollen_max = pollen.get_bounding_volume() 
+                                if collisionTest_AABBs(bee_min, bee_max, pollen_min, pollen_max):
+                                    # if close enough to this piece of pollen, pick it up 
+                                    pollen.carried = True 
+                                    playerBee.carrying_pollen = pollen 
+                                    playerBee.leg_carrying_pollen = True 
+                                    print(f"--picked up pollen number {pollen.pollen_id}")
+                                    break
+                    # drop off pollen -----------------------------------------------------
+                    elif event.key == pygame.K_c:
+                        # only if the bee is already carrying pollen and is touching the beehive
+                        if playerBee.carrying_pollen:
+                            bee_min, bee_max = playerBee.get_bounding_volume(d=3)
+                            hive_min, hive_max = beehive.get_bounding_volume() 
+                            if collisionTest_AABBs(bee_min, bee_max, hive_min, hive_max):
+                                # drop off the pollen 
+                                pollen = playerBee.carrying_pollen
+                                pollen.carried = False 
+                                playerBee.score += 20 
+                                playerBee.carrying_pollen = None 
+                                playerBee.leg_carrying_pollen = False 
+                                print(f"--Dropped off pollen {pollen.pollen_id} at the hive")
 
                 
             # keyboard input - key up
@@ -479,7 +510,7 @@ def main():
         playerBee.draw_bee(draw_bounding_boxes=show_bounding_boxes)
         # pollen
         for pollen in pollen_particles:
-            pollen.draw_pollen()
+            pollen.draw_pollen(draw_bounding_boxes=show_bounding_boxes)
         # fence
         playerBee.draw_fence()
         # moths 

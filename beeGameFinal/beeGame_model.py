@@ -127,6 +127,10 @@ class Bee:
         self.level = 1                               # in-game level
         self.health_percentage = 100                 # in-game health bar
 
+        # pollen interactions 
+        self.carrying_pollen = None 
+        self.leg_carrying_pollen = False
+
 
 
 
@@ -189,7 +193,7 @@ class Bee:
         # boundaries = [ (x_min, x_max), (y_min, y_max), (z_min, z_max)]
         current_pos = (potent_walk_vector[0], potent_walk_vector[1] + self.height_offset, potent_walk_vector[2])
         # current_pos = (self.walk_vector[0], self.walk_vector[1] + self.height_offset, self.walk_vector[2])
-        distance = 2
+        distance = 1.9
         for i in range(3):
             # check if moving to desired x position is valid or if colliding with props 
             # direction = np.sign(self.walk_direction[i])
@@ -612,7 +616,17 @@ class Bee:
         
         #--------------Code above will create the geometry of the bee -------------------
         glPopMatrix() # DO NOT DELETE THIS
-        
+    
+    def get_bounding_volume(self, d=2.0 ):
+        # position of bee’s center:
+        x = self.walk_vector[0]
+        y = self.walk_vector[1] + self.height_offset
+        z = self.walk_vector[2]
+        # half‐extent (tweak as needed for tighter/looser fit)
+        # d = 2.0
+        return (x-d, y-d, z-d), (x+d, y+d, z+d)
+
+
     # create fence geometry 
     def draw_fence(self):
         glColor3f(1.0, 1.0, 1.0)  # White color for the fence posts
@@ -951,7 +965,10 @@ class Pollen:
         self.falling = False
 
 
-    def draw_pollen(self):
+    def draw_pollen(self, draw_bounding_boxes:bool):
+        if draw_bounding_boxes:
+            minc, maxc = self.get_bounding_volume()
+            draw_AABB(minc, maxc, center=(self.x_pos, self.y_pos, self.z_pos))
         if self.in_beehive:
             # should not render at all
             pass 
@@ -963,12 +980,24 @@ class Pollen:
             pass 
         else:
             # go to spawn position 
-            pass
+            self.x_pos = self.initial_x
+            self.y_pos = self.initial_y
+            self.z_pos = self.initial_z
         glPushMatrix()
         glColor3f(*self.color)
         glTranslatef(self.x_pos, self.y_pos, self.z_pos)
         glutSolidSphere(self.radius, 6, 6)
         glPopMatrix()
+
+    def get_bounding_volume(self):
+        min_x = self.x_pos - self.radius
+        min_y = self.y_pos - self.radius
+        min_z = self.z_pos - self.radius
+        max_x = self.x_pos + self.radius
+        max_y = self.y_pos + self.radius
+        max_z = self.z_pos + self.radius
+        return (min_x, min_y, min_z), (max_x, max_y, max_z)
+    
 
 
 
