@@ -282,7 +282,7 @@ class Bee:
         self.resetToOrigin()
 
     # create bee geometry 
-    def draw_bee(self): 
+    def draw_bee(self, draw_bounding_boxes=False): 
         # color variables 
         black_color = (0, 0, 0)
         white_color = (1, 1, 1)
@@ -292,14 +292,14 @@ class Bee:
         eye_red_color = (204/255, 0, 0)
         red_iris_color = (153/255, 0, 0)
 
-        collision_zone = 2
-        min_coords = ((self.walk_vector[0] - collision_zone), 
-                      (self.walk_vector[1] + self.height_offset - collision_zone), 
-                      (self.walk_vector[2] - collision_zone))
+        collision_zone = (2.35, 2.35, 2.35)
+        min_coords = ((self.walk_vector[0] - collision_zone[0]), 
+                      (self.walk_vector[1] + self.height_offset - collision_zone[1]), 
+                      (self.walk_vector[2] - collision_zone[2]))
         
-        max_coords = ((self.walk_vector[0] + collision_zone), 
-                      (self.walk_vector[1] + self.height_offset + collision_zone), 
-                      (self.walk_vector[2] + collision_zone))
+        max_coords = ((self.walk_vector[0] + collision_zone[0]), 
+                      (self.walk_vector[1] + self.height_offset + collision_zone[1]), 
+                      (self.walk_vector[2] + collision_zone[2]))
 
 
         glClearColor(0, 0, 0, 1)                                                # set background RGBA color 
@@ -309,10 +309,11 @@ class Bee:
         quadratic = gluNewQuadric()
         gluQuadricDrawStyle(quadratic, GLU_FILL)  
 
-        draw_AABB(min_coords, max_coords,  
-                  (self.walk_vector[0], 
-                   self.walk_vector[1] + self.height_offset, 
-                   self.walk_vector[2]))
+        if draw_bounding_boxes:
+            draw_AABB(min_coords, max_coords,  
+                    (self.walk_vector[0], 
+                    self.walk_vector[1] + self.height_offset, 
+                    self.walk_vector[2]))
 
         glPushMatrix() # DO NOT DELETE THIS
 
@@ -774,7 +775,7 @@ class Moth:
         self.leg_angle = math.sin(pygame.time.get_ticks() * self.leg_speed * self.anim_speed) * self.leg_range  # Adjust speed and range
     
 
-    def draw_moth(self, bee:Bee):
+    def draw_moth(self, bee:Bee, draw_bounding_boxes=False):
         if self.health <= 0:
             # if dead, don't render 
             pass 
@@ -808,8 +809,8 @@ class Moth:
         min_coords = ((current_pos[0] - distance), (current_pos[1] - distance), (current_pos[2] - distance))
         max_coords = ((current_pos[0] + distance), (current_pos[1] + distance), (current_pos[2] + distance))
 
-
-        draw_AABB(min_coords, max_coords, center=current_pos)
+        if draw_bounding_boxes:
+            draw_AABB(min_coords, max_coords, center=current_pos)
 
         if  np.abs(current_pos[0] - current_target[0])  < distance and \
             np.abs(current_pos[1] - current_target[1])  < distance and \
@@ -823,11 +824,11 @@ class Moth:
                 print(f"--hit the bee...going back to spawn")
                 # bee.handle_collision()
                 if bee.angry_bee_mode:
-                    self.chasing_bee = False 
                     bee.score += 10
                 else:
                     bee.health_percentage -= 20
-
+                    
+                self.chasing_bee = False 
                 self.target_x_pos = self.target_positions[0][0]
                 self.target_y_pos = self.target_positions[0][1]
                 self.target_z_pos = self.target_positions[0][2]

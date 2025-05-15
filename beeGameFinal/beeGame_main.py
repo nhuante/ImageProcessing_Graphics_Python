@@ -128,7 +128,7 @@ def main():
                                 [(125, 10, 35), (150, 15, 75), (175, 10, 35), (150, 16, 0)],
                                 [(16, 16, -90), (32, 16, -50), (80, 16, -70), (55, 16, -95)],
                                 [(125, 40, -10), (165, 20, -40), (180, 45, -80), (100, 35, -50)], 
-                                
+
                              ]
     for n in range(len(moth_target_positions)):
         moth_enemies.append(Moth(moth_id=n, 
@@ -172,6 +172,9 @@ def main():
     loading_game = True 
     loading_game_time = 2 * 1000
     num_dots = 1
+
+    # developer vars 
+    show_bounding_boxes = False
 
 
     while True:
@@ -303,6 +306,8 @@ def main():
                     elif event.key == pygame.K_6:                       # increase score points 
                         playerBee.score += 50
                         print("Bee Score: ", playerBee.score)
+                    elif event.key == pygame.K_7:                       # toggle bounding boxes shown 
+                        show_bounding_boxes = not show_bounding_boxes
                     # un-pause the game -----------------------------------------------------
                     elif event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
                         playerBee.paused = not playerBee.paused       # will pause the current bee animation
@@ -455,7 +460,7 @@ def main():
         # draw all the models that are made with primitive glu shapes 
         # bee
         playerBee.update_animations()
-        playerBee.draw_bee()
+        playerBee.draw_bee(draw_bounding_boxes=show_bounding_boxes)
         # pollen
         for pollen in pollen_particles:
             pollen.draw_pollen()
@@ -465,7 +470,7 @@ def main():
         if game_mode == "Level 1":
             for moth in moth_enemies:
                 moth.paused = playerBee.paused
-                moth.draw_moth(bee=playerBee)
+                moth.draw_moth(bee=playerBee, draw_bounding_boxes=show_bounding_boxes)
 
         # draw all the props that were imported as obj files 
         for prop in props:
