@@ -7,6 +7,7 @@ import numpy as np
 import math 
 import random 
 # import time 
+from beeGame_collisions import draw_AABB, draw_boundingSphere, collisionTest_AABBs, collisionTest_spheres
 
 '''
     THESE ARE OBJECTS THAT ARE MODELED USING OPENGL METHODS AND FUNCTIONS
@@ -81,6 +82,8 @@ class Bee:
         self.pupil_target = [0, 0]
         self.pupil_pause_time = random.randint(2000, 3000)  # Random pause time (in milliseconds)
         self.last_pupil_change_time = pygame.time.get_ticks()  # Last time the pupil changed position
+
+        self.current_position = ()
     
 
         # freeform movement motion parameters
@@ -289,6 +292,14 @@ class Bee:
         eye_red_color = (204/255, 0, 0)
         red_iris_color = (153/255, 0, 0)
 
+        collision_zone = 2
+        min_coords = ((self.walk_vector[0] - collision_zone), 
+                      (self.walk_vector[1] + self.height_offset - collision_zone), 
+                      (self.walk_vector[2] - collision_zone))
+        
+        max_coords = ((self.walk_vector[0] + collision_zone), 
+                      (self.walk_vector[1] + self.height_offset + collision_zone), 
+                      (self.walk_vector[2] + collision_zone))
 
 
         glClearColor(0, 0, 0, 1)                                                # set background RGBA color 
@@ -297,6 +308,11 @@ class Bee:
         # configure quatratic drawing [$1,470]
         quadratic = gluNewQuadric()
         gluQuadricDrawStyle(quadratic, GLU_FILL)  
+
+        draw_AABB(min_coords, max_coords,  
+                  (self.walk_vector[0], 
+                   self.walk_vector[1] + self.height_offset, 
+                   self.walk_vector[2]))
 
         glPushMatrix() # DO NOT DELETE THIS
 
@@ -540,14 +556,7 @@ class Bee:
         #--------------Code above will create the geometry of the bee -------------------
         glPopMatrix() # DO NOT DELETE THIS
         
-    
-    
-    
-    
-    
-    
-    
-    
+    # create fence geometry 
     def draw_fence(self):
         glColor3f(1.0, 1.0, 1.0)  # White color for the fence posts
 
@@ -707,15 +716,16 @@ class Moth:
                     initial_x:float, initial_y:float, initial_z:float, 
                     target_positions:list ):
         # where the next target point is, current position, the spawn position
-        self.current_x_pos, self.initial_x = initial_x, initial_x
-        self.current_y_pos, self.initial_y = initial_y, initial_y
-        self.current_z_pos, self.initial_z = initial_z, initial_z
+        # self.current_x_pos, self.initial_x = initial_x, initial_x
+        # self.current_y_pos, self.initial_y = initial_y, initial_y
+        # self.current_z_pos, self.initial_z = initial_z, initial_z
 
         self.target_positions = target_positions
         self.current_target_index = 0
-        self.target_x_pos = target_positions[0][0]
-        self.target_y_pos = target_positions[0][1]
-        self.target_z_pos = target_positions[0][2]
+
+        self.current_x_pos, self.initial_x, self.target_x_pos = target_positions[0][0], target_positions[0][0], target_positions[0][0]
+        self.current_y_pos, self.initial_y, self.target_y_pos = target_positions[0][1], target_positions[0][1], target_positions[0][1]
+        self.current_z_pos, self.initial_z, self.target_z_pos = target_positions[0][2], target_positions[0][2], target_positions[0][2]
 
         self.moth_id = moth_id
 
@@ -734,8 +744,9 @@ class Moth:
         self.health = 100
         self.max_health = 100
 
-        self.move_speed = 0.05 
+        self.move_speed = 0.15 
         self.anim_speed = 1
+        self.yaw = 0
 
         self.wing_speed = 0.01
         self.wing_range = 20
@@ -746,8 +757,8 @@ class Moth:
         self.leg_range = 1.1
 
         self.paused = False 
+        self.chasing_bee = False
 
-        self.draw_moth()
 
 
     
@@ -763,7 +774,7 @@ class Moth:
         self.leg_angle = math.sin(pygame.time.get_ticks() * self.leg_speed * self.anim_speed) * self.leg_range  # Adjust speed and range
     
 
-    def draw_moth(self):
+    def draw_moth(self, bee:Bee):
         if self.health <= 0:
             # if dead, don't render 
             pass 
@@ -771,41 +782,82 @@ class Moth:
         self.update_animations()
 
         glPushMatrix()
-        # check if we are already at the target positions 
-        current_target = (self.target_x_pos, self.target_y_pos, self.target_z_pos)
         current_pos = (self.current_x_pos, self.current_y_pos, self.current_z_pos)
-        spawn_point = (self.initial_x, self.initial_y, self.initial_z)
-        if np.abs(current_pos[0] - current_target[0]) <= 1 and \
-            np.abs(current_pos[1] - current_target[1]) <= 1 and \
-            np.abs(current_pos[2] - current_target[2]) <= 1:
-            # get the next target position in the list 
-            new_target = self.target_positions[(self.target_positions.index(current_target) + 1) % len(self.target_positions)]
-            print(f"--hit a target points...new target point is {new_target}")
-            self.target_x_pos, self.target_y_pos, self.target_z_pos = new_target[0], new_target[1], new_target[2]
-        # elif current_target == spawn_point:
-        #     # make it to the first spawn positions 
-        # Smoothly move the moth towards the target position (you can adjust the speed) 
-        dx, dy, dz = 0, 0, 0
-        if not (np.abs(current_pos[0] - current_target[0]) <= 1): 
-            if current_pos[0] < current_target[0]: dx = 1
-            else: dx = -1
-            self.current_x_pos += dx * self.move_speed
-        if not (np.abs(current_pos[1] - current_target[1]) <= 1): 
-            if current_pos[1] < current_target[1]: dy = 1
-            else: dy = -1
-            self.current_y_pos += dy * self.move_speed
-        if not (np.abs(current_pos[2] - current_target[2]) <= 1): 
-            if current_pos[2] < current_target[2]: dz = 1
-            else: dz = -1
-            self.current_z_pos += dz * self.move_speed
 
-        # face_direction_norm = [float(i)/max(face_direction) for i in face_direction]
-        yaw = math.degrees(math.atan2(dx, dz))
-        h = math.hypot(dx, dz)
-        pitch = math.degrees(math.atan2(dy, h))
+        if not self.chasing_bee:
+            # check if bee is within range before we continue upon our path 
+            if  np.abs(current_pos[0] - bee.walk_vector[0])                         <= 15 and \
+                np.abs(current_pos[1] - (bee.walk_vector[1] + bee.height_offset))   <= 15 and \
+                np.abs(current_pos[2] - bee.walk_vector[2])                         <= 15:
+                self.chasing_bee = True
 
+        # if bee is within range, follow the bee 
+        if self.chasing_bee:
+            current_target = (bee.walk_vector[0], bee.walk_vector[1] + bee.height_offset, bee.walk_vector[2])
+            # NOTE: may add so it stop chasing you if out of range again here...tbd if i finish the project by friday 
+        # if bee not within range, follow the target positions of our pre-determined path 
+        else:
+            # check if we are already at the target positions 
+            current_target = (self.target_x_pos, self.target_y_pos, self.target_z_pos)
+
+        # collisision aabb zone 
+        if self.chasing_bee: distance = 3 
+        else: distance = 1
+
+        # if within a distance from the target point 
+        min_coords = ((current_pos[0] - distance), (current_pos[1] - distance), (current_pos[2] - distance))
+        max_coords = ((current_pos[0] + distance), (current_pos[1] + distance), (current_pos[2] + distance))
+
+
+        draw_AABB(min_coords, max_coords, center=current_pos)
+
+        if  np.abs(current_pos[0] - current_target[0])  < distance and \
+            np.abs(current_pos[1] - current_target[1])  < distance and \
+            np.abs(current_pos[2] - current_target[2])  < distance:
+            if not self.chasing_bee: # if on the patrol path, go to the next target point 
+                # get the next target position in the list 
+                new_target = self.target_positions[(self.target_positions.index(current_target) + 1) % len(self.target_positions)]
+                print(f"--hit a target point...new target point is {new_target}")
+                self.target_x_pos, self.target_y_pos, self.target_z_pos = new_target[0], new_target[1], new_target[2]
+            else: # if chasing bee, this means we got close enough to the bee 
+                print(f"--hit the bee...going back to spawn")
+                # bee.handle_collision()
+                if bee.angry_bee_mode:
+                    self.chasing_bee = False 
+                    bee.score += 10
+                else:
+                    bee.health_percentage -= 20
+
+                self.target_x_pos = self.target_positions[0][0]
+                self.target_y_pos = self.target_positions[0][1]
+                self.target_z_pos = self.target_positions[0][2]
+
+                self.current_x_pos = self.initial_x
+                self.current_y_pos = self.initial_y
+                self.current_z_pos = self.initial_z
+                
+        # if game is paused, no updates to the position or rotation of the moth 
+        if not self.paused:
+            # get the directions the moth is moving in (positive or negative ) 
+            dx, dy, dz = 0, 0, 0
+            if not (np.abs(current_pos[0] - current_target[0]) <= 1): 
+                if current_pos[0] < current_target[0]: dx = 1
+                else: dx = -1
+                self.current_x_pos += dx * self.move_speed      # updates x_pos 
+            if not (np.abs(current_pos[1] - current_target[1]) <= 1): 
+                if current_pos[1] < current_target[1]: dy = 1
+                else: dy = -1
+                self.current_y_pos += dy * self.move_speed      # updates y_pos 
+            if not (np.abs(current_pos[2] - current_target[2]) <= 1): 
+                if current_pos[2] < current_target[2]: dz = 1
+                else: dz = -1
+                self.current_z_pos += dz * self.move_speed      # updates z_pos
+            # turns directions into angles 
+            self.yaw = math.degrees(math.atan2(dx, dz))
+
+        # rotate moth to face the correct direction and translate to correct position in the world 
         glTranslatef(self.current_x_pos, self.current_y_pos, self.current_z_pos)
-        glRotatef(yaw,   0, 1, 0)
+        glRotatef(self.yaw,   0, 1, 0)
         # glRotatef(pitch, 1, 0, 0)
 
         glScalef(3, 3, 3)

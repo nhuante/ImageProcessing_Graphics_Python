@@ -124,17 +124,20 @@ def main():
 
     # moth enemies 
     moth_enemies = [] 
-    for n in range(1):
+    moth_target_positions = [   [(25, 35, 75), (50, 15, 75), (50, 20, 20), (25, 35, 20)], 
+                                [(125, 10, 35), (150, 15, 75), (175, 10, 35), (150, 16, 0)],
+                                [(16, 16, -90), (32, 16, -50), (80, 16, -70), (55, 16, -95)],
+                                [(125, 40, -10), (165, 20, -40), (180, 45, -80), (100, 35, -50)], 
+                                
+                             ]
+    for n in range(len(moth_target_positions)):
         moth_enemies.append(Moth(moth_id=n, 
                                  initial_x=25, initial_y=40, initial_z=75, 
-                                 target_positions=[(25, 35, 75), 
-                                                   (50, 15, 75), 
-                                                   (50, 20, 20), 
-                                                   (25, 35, 20)]))
+                                 target_positions=moth_target_positions[n]))
         print(f"---done drawing moth with id: {moth_enemies[0].moth_id}")
 
     # initialize the camera: camera parameters 
-    camera = Camera(view_mode="corner1") # FIXME: set correct default view for the bee 
+    camera = Camera(view_mode="follow") # FIXME: set correct default view for the bee 
 
     # initialize the states of all the designated keys
 
@@ -201,7 +204,6 @@ def main():
                         game_over = False 
                         game_result = None
                         game_mode = "Level 1"       # update game mode 
-                        # playerBee.paused = False    # reset pausing when switching rooms
                         playerBee.reset_bee_switching_rooms()
                     elif button_clicked == "help":
                         print(" help-lobby menu loading.....")
@@ -211,7 +213,6 @@ def main():
                     elif button_clicked == "toLobby":
                         print(" exiting to lobby....")
                         game_mode = "Lobby"         # update game mode 
-                        # playerBee.paused = False    # reset pausing when switching rooms
                         playerBee.reset_bee_switching_rooms()
                     elif button_clicked == "helpGame":
                         print(" help-inGame menu loading....")
@@ -222,7 +223,10 @@ def main():
                     button_clicked = ui.check_if_button_clicked(mouse_x, mouse_y, game_mode, help_showing)
                     if button_clicked == "exitHelp":
                         help_showing = False
-                        if game_mode == "Lobby": playerBee.paused = False
+                        if game_mode == "Lobby": 
+                            playerBee.paused = False
+                            # for moth in moth_enemies:
+                            #     moth.paused = False
 
                 
                 
@@ -233,7 +237,13 @@ def main():
                     # pause the game 
                     if event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
                         playerBee.paused = not playerBee.paused       # will pause the current bee animation
-                        if playerBee.paused: playerBee.start_pause()
+                        if playerBee.paused: 
+                            playerBee.start_pause()
+                            # for moth in moth_enemies:
+                            #     moth.paused = True
+                        # else:
+                        #     for moth in moth_enemies:
+                        #         moth.paused = False
                         print(F"\nGAME PAUSED - {playerBee.paused} ")
                 # if game not pause, listen for all keys 
                 else:
@@ -452,8 +462,10 @@ def main():
         # fence
         playerBee.draw_fence()
         # moths 
-        for moth in moth_enemies:
-            moth.draw_moth()
+        if game_mode == "Level 1":
+            for moth in moth_enemies:
+                moth.paused = playerBee.paused
+                moth.draw_moth(bee=playerBee)
 
         # draw all the props that were imported as obj files 
         for prop in props:
@@ -474,12 +486,17 @@ def main():
             elif help_showing:  
                 ui.draw_help_menu()         # help screen (pause while we show)
                 playerBee.paused = True
+                # for moth in moth_enemies:
+                #     moth.paused = True
+
             else:
                 ui.draw_lobby_gui()         # normal lobby ui
         elif game_mode == "Level 1":
             if help_showing:
                 ui.draw_help_menu()         # help screen (pause while we show)
                 playerBee.paused = True
+                # for moth in moth_enemies:
+                #     moth.paused = True
             elif game_over:
                 ui.draw_end_of_game_gui(gameWon=game_result)
             elif playerBee.paused and not help_showing: 

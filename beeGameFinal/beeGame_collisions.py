@@ -194,15 +194,16 @@ def draw_boundingSphere(center, radius):
     glEnable(GL_LIGHTING)
     glPopAttrib()
 
-def draw_AABB(min_coords, max_coords, center):
+def draw_AABB(min_coords, max_coords, center, bcollide=False):
     # Calculate size of the box along each axis
     size_x = max_coords[0] - min_coords[0]
     size_y = max_coords[1] - min_coords[1]
     size_z = max_coords[2] - min_coords[2]
 
     # glutWireCube draws a cube of size 1 centered at (0,0,0), so we scale
-    glPushAttrib(GL_POLYGON_BIT)
+    glPushAttrib(GL_ENABLE_BIT | GL_POLYGON_BIT | GL_LINE_BIT)
     glDisable(GL_LIGHTING)
+
     glColor3f(1.0, 1.0, 1.0)
     if bCollide == True:
         glColor3f(0.25, 0.88, 0.82)
@@ -215,7 +216,7 @@ def draw_AABB(min_coords, max_coords, center):
     glutWireCube(1.0)
     glPopMatrix()
 
-    glEnable(GL_LIGHTING)
+    # glEnable(GL_LIGHTING)
     glPopAttrib()
 
 ########################################### Laplacian Smoothing ####################################################
