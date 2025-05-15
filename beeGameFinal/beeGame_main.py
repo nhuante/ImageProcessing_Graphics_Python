@@ -176,7 +176,7 @@ def main():
 
     # garden properties 
     garden_x_boundaries = (0, 200)
-    garden_y_boundaries = (-13, 2000)
+    garden_y_boundaries = (-18, 2000)
     garden_z_boundaries = (-100, 100)
 
     # loading screen 
@@ -348,14 +348,22 @@ def main():
                         if playerBee.carrying_pollen:
                             bee_min, bee_max = playerBee.get_bounding_volume(d=3)
                             hive_min, hive_max = beehive.get_bounding_volume() 
+                            pollen = playerBee.carrying_pollen
+                            # if colliding with the beehive 
                             if collisionTest_AABBs(bee_min, bee_max, hive_min, hive_max):
-                                # drop off the pollen 
-                                pollen = playerBee.carrying_pollen
-                                pollen.carried = False 
-                                playerBee.score += 20 
-                                playerBee.carrying_pollen = None 
-                                playerBee.leg_carrying_pollen = False 
+                                # drop off at beehive 
+                                playerBee.score += 20  
                                 print(f"--Dropped off pollen {pollen.pollen_id} at the hive")
+                                pollen.carried = False 
+                                pollen.falling = False
+                            else:
+                                # drop off and start falling 
+                                pollen.falling = True 
+                                pollen.carried = False 
+                                
+                            # pollen.carried = False 
+                            playerBee.carrying_pollen = None 
+                            playerBee.leg_carrying_pollen = False
 
                 
             # keyboard input - key up
@@ -510,7 +518,7 @@ def main():
         playerBee.draw_bee(draw_bounding_boxes=show_bounding_boxes)
         # pollen
         for pollen in pollen_particles:
-            pollen.draw_pollen(draw_bounding_boxes=show_bounding_boxes)
+            pollen.draw_pollen(draw_bounding_boxes=show_bounding_boxes, bee=playerBee)
         # fence
         playerBee.draw_fence()
         # moths 

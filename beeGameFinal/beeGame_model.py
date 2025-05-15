@@ -961,28 +961,36 @@ class Pollen:
         self.radius = radius
 
         self.carried = False 
-        self.in_beehive = False
         self.falling = False
 
+        self.falling_difference = 0
 
-    def draw_pollen(self, draw_bounding_boxes:bool):
+
+    def draw_pollen(self, draw_bounding_boxes:bool, bee:Bee):
         if draw_bounding_boxes:
             minc, maxc = self.get_bounding_volume()
             draw_AABB(minc, maxc, center=(self.x_pos, self.y_pos, self.z_pos))
-        if self.in_beehive:
-            # should not render at all
-            pass 
-        elif self.carried:
+
+        if self.carried:
+            self.falling_difference = 0
             # offset from the bee's current position 
-            pass 
+            self.x_pos = bee.walk_vector[0]
+            self.y_pos = bee.walk_vector[1] + bee.height_offset - 5
+            self.z_pos = bee.walk_vector[2]
         elif self.falling:
+            self.falling_difference -= .1
             # should keep falling until hits the ground --> go to spawn location 
-            pass 
-        else:
+            # self.x_pos = bee.walk_vector[0]
+            self.y_pos = max(self.y_pos + self.falling_difference, -12)
+            print(f"---pollen falling, at position ({self.x_pos}, {self.y_pos}, {self.z_pos}")
+            # self.z_pos = bee.walk_vector[2]
+        elif not self.carried and not self.falling:
+            self.falling_difference = 0
             # go to spawn position 
             self.x_pos = self.initial_x
             self.y_pos = self.initial_y
             self.z_pos = self.initial_z
+
         glPushMatrix()
         glColor3f(*self.color)
         glTranslatef(self.x_pos, self.y_pos, self.z_pos)
