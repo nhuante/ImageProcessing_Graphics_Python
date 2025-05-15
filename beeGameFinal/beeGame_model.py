@@ -702,6 +702,216 @@ class Pollen:
 
 
 
+class Moth: 
+    def __init__(   self, moth_id:int, 
+                    initial_x:float, initial_y:float, initial_z:float, 
+                    target_positions:list ):
+        # where the next target point is, current position, the spawn position
+        self.current_x_pos, self.initial_x = initial_x, initial_x
+        self.current_y_pos, self.initial_y = initial_y, initial_y
+        self.current_z_pos, self.initial_z = initial_z, initial_z
+
+        self.target_positions = target_positions
+        self.current_target_index = 0
+        self.target_x_pos = target_positions[0][0]
+        self.target_y_pos = target_positions[0][1]
+        self.target_z_pos = target_positions[0][2]
+
+        self.moth_id = moth_id
+
+        self.orangeish = (179/255, 125/255, 18/255)
+        self.brown = (119/255, 80/255, 0/255)
+        self.mud = (88/255, 72/255, 41/255)
+        self.black = (0, 0, 0)
+        self.white = (1, 1, 1)
+
+        self.head_color, self.thorax_color, self.abdomen_color = self.brown, self.orangeish, self.brown, 
+
+        self.wing_color = self.mud
+        self.leg_color = self.black
+        self.antenna_color = self.black
+
+        self.health = 100
+        self.max_health = 100
+
+        self.move_speed = 0.05 
+        self.anim_speed = 1
+
+        self.wing_speed = 0.01
+        self.wing_range = 20
+        self.wing_angle = 0 
+
+        self.leg_angle = 0
+        self.leg_speed = 1
+        self.leg_range = 1.1
+
+        self.paused = False 
+
+        self.draw_moth()
+
+
+    
+    # update the animation parameters 
+    def update_animations(self):
+        if self.paused:
+            return 
+        # wing flapping (using sine wave for smooth back-and-forth movement)
+        self.wing_angle = min(-math.sin(pygame.time.get_ticks() * self.wing_speed * self.anim_speed) * self.wing_range, 
+                              math.sin(pygame.time.get_ticks() * self.wing_speed * self.anim_speed) * self.wing_range)  # Adjust speed and range
+        
+        # leg swinging (similar sine wave motion for a pendulum-like effect)
+        self.leg_angle = math.sin(pygame.time.get_ticks() * self.leg_speed * self.anim_speed) * self.leg_range  # Adjust speed and range
+    
+
+    def draw_moth(self):
+        if self.health <= 0:
+            # if dead, don't render 
+            pass 
+
+        self.update_animations()
+
+        glPushMatrix()
+        # check if we are already at the target positions 
+        current_target = (self.target_x_pos, self.target_y_pos, self.target_z_pos)
+        current_pos = (self.current_x_pos, self.current_y_pos, self.current_z_pos)
+        spawn_point = (self.initial_x, self.initial_y, self.initial_z)
+        if np.abs(current_pos[0] - current_target[0]) <= 1 and \
+            np.abs(current_pos[1] - current_target[1]) <= 1 and \
+            np.abs(current_pos[2] - current_target[2]) <= 1:
+            # get the next target position in the list 
+            new_target = self.target_positions[(self.target_positions.index(current_target) + 1) % len(self.target_positions)]
+            print(f"--hit a target points...new target point is {new_target}")
+            self.target_x_pos, self.target_y_pos, self.target_z_pos = new_target[0], new_target[1], new_target[2]
+        # elif current_target == spawn_point:
+        #     # make it to the first spawn positions 
+        # Smoothly move the moth towards the target position (you can adjust the speed) 
+        dx, dy, dz = 0, 0, 0
+        if not (np.abs(current_pos[0] - current_target[0]) <= 1): 
+            if current_pos[0] < current_target[0]: dx = 1
+            else: dx = -1
+            self.current_x_pos += dx * self.move_speed
+        if not (np.abs(current_pos[1] - current_target[1]) <= 1): 
+            if current_pos[1] < current_target[1]: dy = 1
+            else: dy = -1
+            self.current_y_pos += dy * self.move_speed
+        if not (np.abs(current_pos[2] - current_target[2]) <= 1): 
+            if current_pos[2] < current_target[2]: dz = 1
+            else: dz = -1
+            self.current_z_pos += dz * self.move_speed
+
+        # face_direction_norm = [float(i)/max(face_direction) for i in face_direction]
+        yaw = math.degrees(math.atan2(dx, dz))
+        h = math.hypot(dx, dz)
+        pitch = math.degrees(math.atan2(dy, h))
+
+        glTranslatef(self.current_x_pos, self.current_y_pos, self.current_z_pos)
+        glRotatef(yaw,   0, 1, 0)
+        # glRotatef(pitch, 1, 0, 0)
+
+        glScalef(3, 3, 3)
+
+        # ---- BODY ----
+        #
+        glColor3f(*self.head_color)
+        # Head
+        glPushMatrix()
+        glTranslatef(0, 0, 0.5)
+        glutSolidSphere(0.3, 16, 16)
+
+        for offset in [-0.1, 0.1]:
+            glPushMatrix()
+            glColor3f(*self.black)
+            glTranslate(offset, 0, 0.28)
+            glutSolidSphere(0.05, 16, 16)
+            glColor3f(*self.white)
+            glTranslate(0, 0, 0.033)
+            glutSolidSphere(0.025, 16, 16)
+            glPopMatrix()
+        glPopMatrix()
+
+        # Thorax
+        glPushMatrix()
+        glColor3f(*self.thorax_color)
+        glTranslatef(0, 0, 0)
+        glScalef(0.5, 0.5, 0.7)
+        glutSolidSphere(0.5, 16, 16)
+        glPopMatrix()
+
+        # Abdomen
+        glPushMatrix()
+        glColor3f(*self.abdomen_color)
+        glTranslatef(0, 0, -0.8)
+        glScalef(0.4, 0.4, 1.0)
+        glutSolidSphere(0.5, 16, 16)
+        glPopMatrix()
+
+        #
+        # ---- WINGS ----
+        # glPushMatrix() 
+        # glColor3f(*wing_grey_color)    # light grey 
+        # glTranslatef(-dist_from_center_line, dist_to_line_up_above_bee, 0.0)
+        # glTranslatef(1, 0, 0)
+        # glRotatef(self.wing_angle, 0, 0, 1)  # Flap the left wing
+        # glTranslatef(-1, 0, 0)
+        # glScalef(scale_wing_length, scale_wing_thickness, scale_wing_width)     # flatten
+        # glutSolidCube(1)
+        # glPopMatrix()
+
+        glColor3f(*self.wing_color)
+        # Right wing
+        glPushMatrix()
+        glTranslatef(0.4, -0.1, 0)
+
+        # for animation: 
+        glTranslatef(-1, 0, 0)
+        glRotatef(-self.wing_angle, 0, 0, 1)  # Flap the wing
+        glTranslatef(1, 0, 0)
+
+        glScalef(1, 0.05, 0.55)
+        glutSolidCube(1.0)
+        glPopMatrix()
+
+        # Left wing
+        glPushMatrix()
+        glTranslatef(-0.4, -0.1, 0)
+
+        # for animation: 
+        glTranslatef(1, 0, 0)
+        glRotatef(self.wing_angle, 0, 0, 1)  # Flap the wing
+        glTranslatef(-1, 0, 0)
+
+        glScalef(1.5, 0.05, 0.55)
+        glutSolidCube(1.0)
+        glPopMatrix()
+
+        #
+        # ---- LEGS (3 per side) ----
+        #
+        glColor3f(*self.leg_color)
+        for side in (-0.5, 0.5):
+            for i in range(3):
+                z_off = 0.3 - i * 0.3
+                glPushMatrix()
+                glTranslatef(side * 0.3, -0.1, z_off)
+                # for animation later: glRotatef(self.leg_angle * side, 1,0,0)
+                glTranslatef(0, -0.3, 0)
+                glScalef(0.05, 0.6, 0.05)
+                glutSolidCube(1.0)
+                glPopMatrix()
+
+        #
+        # ---- ANTENNAE ----
+        #
+        glColor3f(*self.antenna_color)
+        for side in (-1, 1):
+            glPushMatrix()
+            glTranslatef(side * 0.15, 0.25, 0.7)
+            glRotatef(60 * side, 0,1,0)
+            glScalef(0.05, 0.05, 0.5)
+            glutSolidCube(1.0)
+            glPopMatrix()
+
+        glPopMatrix()
 
 
 

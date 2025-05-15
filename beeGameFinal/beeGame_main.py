@@ -8,7 +8,7 @@ import numpy as np
 # import time 
 
 from beeGame_sceneObjects import Prop, create_grass_objects, create_flower_objects, create_beehive
-from beeGame_model import Bee, Camera, Pollen
+from beeGame_model import Bee, Camera, Pollen, Moth
 from beeGame_GUI import UI
 
 width, height = 800, 600                                                    # width and height of the screen created
@@ -103,11 +103,11 @@ def main():
     #     props.append(grass)
 
     # flowers 
-    flowers, flower_positions = create_flower_objects(num_flowers=8)
-    for flower in flowers:
-        props.append(flower)
-    for position in flower_positions:
-        print(position)
+    # flowers, flower_positions = create_flower_objects(num_flowers=8)
+    # for flower in flowers:
+    #     props.append(flower)
+    # for position in flower_positions:
+    #     print(position)
 
     # beehive 
     props.append(create_beehive())
@@ -118,9 +118,20 @@ def main():
         if n > (len(flower_positions)//2) - 1: pollen_height = 15
         else: pollen_height = 35
         pollen_particles.append(Pollen( radius=2, color=(215/255, 215/255, 25/255), pollen_id=n+1, 
-                                        initial_x=flower_positions[n][0]+2,         # x_pos 
-                                        initial_y=flower_positions[n][1] + pollen_height ,   # y_pos
-                                        initial_z=flower_positions[n][2]))        # z_pos
+                                        initial_x=flower_positions[n][0]+2,                 # x_pos 
+                                        initial_y=flower_positions[n][1] + pollen_height ,  # y_pos
+                                        initial_z=flower_positions[n][2]))                  # z_pos
+
+    # moth enemies 
+    moth_enemies = [] 
+    for n in range(1):
+        moth_enemies.append(Moth(moth_id=n, 
+                                 initial_x=25, initial_y=40, initial_z=75, 
+                                 target_positions=[(25, 35, 75), 
+                                                   (50, 15, 75), 
+                                                   (50, 20, 20), 
+                                                   (25, 35, 20)]))
+        print(f"---done drawing moth with id: {moth_enemies[0].moth_id}")
 
     # initialize the camera: camera parameters 
     camera = Camera(view_mode="corner1") # FIXME: set correct default view for the bee 
@@ -431,11 +442,22 @@ def main():
 
         glMultMatrixf(modelMatrix)        
         
+        # draw all the models that are made with primitive glu shapes 
+        # bee
         playerBee.update_animations()
         playerBee.draw_bee()
+        # pollen
         for pollen in pollen_particles:
             pollen.draw_pollen()
+        # fence
+        playerBee.draw_fence()
+        # moths 
+        for moth in moth_enemies:
+            moth.draw_moth()
 
+        # draw all the props that were imported as obj files 
+        for prop in props:
+            prop.draw()
 
         
         set_2d_projection()     # switch to 2d mode so we can draw the gui 
@@ -479,10 +501,6 @@ def main():
         else:
             pygame.display.set_caption('Bee - Do You Have Any Buzzing Talent?')
 
-        # props 
-        playerBee.draw_fence()
-        for prop in props:
-            prop.draw()
 
         glPopMatrix()
         pygame.display.flip()
