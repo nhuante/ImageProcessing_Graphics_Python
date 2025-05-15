@@ -8,7 +8,7 @@ import numpy as np
 # import time 
 
 from beeGame_sceneObjects import Prop, create_grass_objects, create_flower_objects, create_beehive
-from beeGame_model import Bee, Camera, Pollen, Moth
+from beeGame_model import Bee, Camera, Pollen, Moth, Flower, create_flowers
 from beeGame_GUI import UI
 from beeGame_collisions import collisionTest_AABBs, draw_AABB
 
@@ -137,6 +137,11 @@ def main():
                                  target_positions=moth_target_positions[n]))
         print(f"---done drawing moth with id: {moth_enemies[0].moth_id}")
 
+
+    # flowers 
+    flowers, flower_positions = create_flowers(num_flowers=6, force_regenerate=False) 
+
+
     # initialize the camera: camera parameters 
     camera = Camera(view_mode="follow") # FIXME: set correct default view for the bee 
 
@@ -175,7 +180,7 @@ def main():
     num_dots = 1
 
     # developer vars 
-    show_bounding_boxes = False
+    show_bounding_boxes = True
 
 
     while True:
@@ -309,6 +314,8 @@ def main():
                         print("Bee Score: ", playerBee.score)
                     elif event.key == pygame.K_7:                       # toggle bounding boxes shown 
                         show_bounding_boxes = not show_bounding_boxes
+                    elif event.key == pygame.K_8:                       # force regenerate flower positions 
+                        flowers, flower_positions = create_flowers(num_flowers=6, force_regenerate=True) 
                     # un-pause the game -----------------------------------------------------
                     elif event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
                         playerBee.paused = not playerBee.paused       # will pause the current bee animation
@@ -473,6 +480,9 @@ def main():
             for moth in moth_enemies:
                 moth.paused = playerBee.paused
                 moth.draw_moth(bee=playerBee, draw_bounding_boxes=show_bounding_boxes, obstacles=props)
+        # flowers 
+        for flower in flowers:
+            flower.draw(show_bounding_box=show_bounding_boxes)
 
         # draw all the props that were imported as obj files 
         for prop in props:

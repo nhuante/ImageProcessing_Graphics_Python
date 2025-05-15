@@ -8,7 +8,8 @@ import math
 import random 
 # import time 
 from beeGame_collisions import draw_AABB, draw_boundingSphere, collisionTest_AABBs, collisionTest_spheres
-import beeGame_OBJFileLoader
+# import beeGame_OBJFileLoader
+from beeGame_sceneObjects import read_object_positions_file, create_objects_and_writeif
 
 '''
     THESE ARE OBJECTS THAT ARE MODELED USING OPENGL METHODS AND FUNCTIONS
@@ -734,6 +735,205 @@ class Bee:
             z += post_spacing  # Increment the position by post_spacing
 
 
+
+
+class Flower:
+    def __init__(self, x, y, z, stem_height=2.0, stem_thickness=0.1,
+                 petal_size=0.4, petal_thickness=0.05,
+                 head_size=0.2, scale=(1, 1, 1)):
+        self.pos = (x, y, z)
+        self.stem_height = stem_height
+        self.stem_thickness = stem_thickness
+        self.petal_size = petal_size
+        self.petal_thickness = petal_thickness
+        self.head_size = head_size
+        self.scale = scale
+
+        # colors
+        self.stem_col = (0.0, 0.6, 0.0)          # green
+        self.petal_col = (0.4, 0.0, 0.4)         # dark purple
+        self.head_col  = (1.0, 1.0, 0.0)         # yellow
+
+    def draw(self, show_bounding_box:bool):
+        mins, maxs = self.get_bounding_box()
+        if show_bounding_box:
+            draw_AABB(mins, maxs, 
+                      center=(  self.pos[0], 
+                                (self.pos[1] + ((self.stem_height *0.8) * self.scale[1])) / 2.0, 
+                                self.pos[2]) )
+
+        glPushMatrix()
+        glTranslatef(0, self.stem_height * 0.8, 0)
+        glTranslatef(*self.pos)
+        glScalef(*self.scale)
+
+        # 1) Stem
+        glPushMatrix()
+        glColor3f(*self.stem_col)
+        glScalef(self.stem_thickness, self.stem_height, self.stem_thickness)
+        glutSolidCube(1.0)
+        glPopMatrix()
+
+        # 2) Petals (4 flat cubes around the top of the stem)
+        petal_offset = self.stem_height/2 + self.petal_thickness/2
+        for angle in (0, 90, 180, 270):
+            glPushMatrix()
+            glColor3f(*self.petal_col)
+            glRotatef(angle, 0,1,0)
+            glTranslatef(0, petal_offset, self.petal_size/2 + self.stem_thickness/2)
+            glScalef(self.petal_size, self.petal_thickness, self.petal_size)
+            glutSolidCube(1.0)
+            glPopMatrix()
+
+        # 3) Pollen head
+        glPushMatrix()
+        glColor3f(*self.head_col)
+        glTranslatef(0, self.stem_height/2 + self.head_size/2, 0)
+        glScalef(self.head_size, 0.75, self.head_size)
+        glutSolidCube(1.0)
+        glPopMatrix()
+
+        glPopMatrix()
+
+    def get_bounding_box(self):
+        sx, sy, sz = self.scale 
+        half_width = (self.stem_thickness * sx) / 2.0 
+        height = self.stem_height * sy 
+        px, py, pz = self.pos 
+
+        mins = (    px - half_width, 
+                    py - 15, 
+                    pz - half_width )
+        maxs = (    px + half_width, 
+                    py + height, 
+                    pz + half_width )
+        
+        return mins, maxs
+
+def create_flowers(num_flowers:int, force_regenerate:bool):
+    scalings = [(2, 2, 2), (3.5, 3.5, 3.5)]
+    height = 0
+    rotation = (0, 1, 0, 0)
+    bv_type = "AABB"
+    file_path_1 = "./beeGameFinal/crocusFlowers_positions.txt"
+    file_path_2 = "./beeGameFinal/crocusFlowers_short_positions.txt"
+
+    x_min, x_max, z_min, z_max = 15, 185, -85, 85
+
+    all_objects, all_positions = [], []
+    
+    for index, file_path in enumerate([file_path_1, file_path_2]):
+        # try to open the file and read in positions 
+        need_to_create_file, positions_formatted, num_positions = read_object_positions_file(file_path)
+
+        if num_positions != num_flowers//2:
+            num_positions = num_flowers//2
+            need_to_create_file = True
+            print(f"--positions extracted doesn't match desired count...regenerating")
+        if force_regenerate: 
+            need_to_create_file = True 
+            print(f"--force reset flowers...regenerating")
+
+        # generate the objects 
+        crocus_objects, positions = create_flowers_and_writeif(need_to_create_file=need_to_create_file, positions_formatted=positions_formatted, 
+                                                num_positions=num_positions, path_of_file_to_write=file_path, 
+                                                default_scaling=scalings[index], default_height=height, default_rotation=rotation, 
+                                                default_bv_type=bv_type, 
+                                                xz_boundaries=(x_min, x_max, z_min, z_max), 
+                                                type_of_prop="CROCUS")
+        all_objects += crocus_objects
+        all_positions += positions
+    
+    return all_objects, all_positions
+
+
+def create_flowers_and_writeif(need_to_create_file:bool, positions_formatted:list, num_positions:int, 
+                               path_of_file_to_write:str, 
+                               default_scaling:tuple, default_height:int, default_rotation:tuple,
+                               default_bv_type:str, 
+                               xz_boundaries:tuple, 
+                               type_of_prop:str="default_prop_name"):
+    # initialize our objects list 
+    flower_objects = []
+    positions = []
+
+    stem_height = 70
+    stem_thickness = 1.5
+    petal_thickness = 1.25
+    petal_size = 10
+    head_size = 2
+
+
+    # unpack arguments 
+    x_min, x_max, z_min, z_max = xz_boundaries[0], xz_boundaries[1], xz_boundaries[2], xz_boundaries[3]
+    length_along_z = z_max - z_min
+
+    # if needed, generate random nums and write them to the file for next time                                                    
+    if need_to_create_file: 
+        object_positions_file = open(path_of_file_to_write, "w")
+        for _ in range(num_positions):   
+            # generate a random position on the xz-plane
+            random_x_pos = random.random() * x_max
+            random_z_pos = (random.random() * length_along_z) + z_min
+
+            # generate it in the world 
+            flower_objects.append(Flower(x=random_x_pos, y=default_height, z=random_z_pos, 
+                                         stem_height=stem_height, stem_thickness=stem_thickness,
+                                         petal_size=petal_size, petal_thickness=petal_thickness, 
+                                         head_size=head_size, scale=default_scaling))
+            # prop_objects.append(Prop(f"./resources/models/{object_file_name}", 
+            #                         translation=(   random_x_pos,
+            #                                         default_height, 
+            #                                         random_z_pos), 
+            #                         rotation=default_rotation, 
+            #                         scale=default_scaling, 
+            #                         bv_type=default_bv_type))
+            
+            # save it's position to the file 
+            object_positions_file.write(f"{random_x_pos} {default_height} {random_z_pos} {default_rotation[0]} {default_rotation[1]} {default_rotation[2]} {default_rotation[3]} {default_scaling[0]} {default_scaling[1]} {default_scaling[2]} {default_bv_type}\n")
+            if type_of_prop == "CROCUS": positions.append((random_x_pos, default_height, random_z_pos))
+        object_positions_file.close() 
+        print(f"--random positions generated for {type_of_prop} and written to file")
+    # if no file creation needed, 
+    #   consider the read in and formatted the positions from the file, just use them to populate 
+    else: 
+        for line in range(num_positions):
+            # grab the nect object's position tuple
+            current_object = positions_formatted[line]
+            # print(f"--extracted line {line} as a tuple: {current_object}--")
+
+            # unpack the tuple 
+            pos_x = current_object[0]
+            pos_y = current_object[1]
+            pos_z = current_object[2]
+            # rotation = (current_object[3], current_object[4], current_object[5], current_object[6])
+            scaling = (current_object[7], current_object[8], current_object[9])
+            # bv_type = current_object[10]
+            # print("--extracted positions--")
+
+            # generate it in the world 
+            flower_objects.append(Flower(x=pos_x, y=pos_y, z=pos_z, 
+                                         stem_height=stem_height, stem_thickness=stem_thickness,
+                                         petal_size=petal_size, petal_thickness=petal_thickness, 
+                                         head_size=head_size, scale=scaling))
+            # prop_objects.append(Prop(f"./resources/models/{object_file_name}", 
+            #                         translation=(   pos_x,
+            #                                         pos_y, 
+            #                                         pos_z), 
+            #                         rotation=rotation, 
+            #                         scale=scaling, 
+            #                         bv_type=bv_type))
+            if type_of_prop == "CROCUS": positions.append((pos_x, pos_y, pos_z))
+            print(f"--generated {type_of_prop} object from file's line {line} as a tuple: {current_object}--")
+    return flower_objects, positions
+
+
+
+
+
+
+
+
 class Pollen: 
     def __init__(self, radius:float, color:tuple, pollen_id:int, initial_x:float, initial_y:float, initial_z:float):
         self.x_pos, self.initial_x = initial_x, initial_x
@@ -1104,6 +1304,18 @@ class Moth:
             glPopMatrix()
 
         glPopMatrix()
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
