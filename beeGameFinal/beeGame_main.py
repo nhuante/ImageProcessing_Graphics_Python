@@ -104,7 +104,7 @@ def main():
     #     props.append(grass)
 
     # flowers 
-    # flowers, flower_positions = create_flower_objects(num_flowers=8)
+    # flowers, flower_positions = create_flower_objects(num_flowers=2)
     # for flower in flowers:
     #     props.append(flower)
     # for position in flower_positions:
@@ -472,16 +472,15 @@ def main():
         if game_mode == "Level 1":
             for moth in moth_enemies:
                 moth.paused = playerBee.paused
-                moth.draw_moth(bee=playerBee, draw_bounding_boxes=show_bounding_boxes)
+                moth.draw_moth(bee=playerBee, draw_bounding_boxes=show_bounding_boxes, obstacles=props)
 
         # draw all the props that were imported as obj files 
         for prop in props:
             prop.draw()
             curr_position = prop.t.translation
-            # mins, maxs, _, _ = prop.obj.cal_minMax()
-            # mins, maxs = prop.get_bounding_volume()
-            mins, maxs, center, _ = prop.obj.cal_minMax()
-            draw_AABB(mins, maxs, center)
+            if show_bounding_boxes:
+                mins, maxs, center, _ = prop.obj.cal_minMax()
+                draw_AABB(mins, maxs, center)
 
         
         set_2d_projection()     # switch to 2d mode so we can draw the gui 
@@ -507,8 +506,6 @@ def main():
             if help_showing:
                 ui.draw_help_menu()         # help screen (pause while we show)
                 playerBee.paused = True
-                # for moth in moth_enemies:
-                #     moth.paused = True
             elif game_over:
                 ui.draw_end_of_game_gui(gameWon=game_result)
             elif playerBee.paused and not help_showing: 

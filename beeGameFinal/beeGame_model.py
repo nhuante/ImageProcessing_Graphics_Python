@@ -171,13 +171,11 @@ class Bee:
         # update walk vector 
         if reverse:
             potent_walk_vector = self.walk_vector - (self.walk_speed * rotated_direction)
-            potent_in_reverse = True
+            # potent_in_reverse = True
         else:
             potent_walk_vector = self.walk_vector + (self.walk_speed * rotated_direction)
-            potent_in_reverse = False
+            # potent_in_reverse = False
 
-        # constrain to the garden's boundaries 
-        # boundaries = [ (x_min, x_max), (y_min, y_max), (z_min, z_max)]
         for i in range(3):
             # attempted_walk_vector_value = self.walk_vector[i]
             min_value = boundaries[i][0]
@@ -185,25 +183,63 @@ class Bee:
             potent_walk_vector[i] = max(min(potent_walk_vector[i], max_value), min_value)
         # print("walk vecctor:", self.walk_vector)      # for testing
 
-        # build the potential aabb 
-        collision_zone = (2.35, 2.35, 2.35)
-        bee_potential_mins = (potent_walk_vector[0] - collision_zone[0], 
-                              potent_walk_vector[1] + self.height_offset - collision_zone[1], 
-                              potent_walk_vector[2] - collision_zone[2])
-        bee_potential_maxs = (potent_walk_vector[0] + collision_zone[0], 
-                              potent_walk_vector[1] + self.height_offset + collision_zone[1], 
-                              potent_walk_vector[2] + collision_zone[2])
-        
-        # check for collisions 
-        for prop in obstacles:
-            obs_min, obs_max = prop.get_bounding_volume()
-            if collisionTest_AABBs(bee_potential_mins, bee_potential_maxs, 
-                                   obs_min, obs_max):
-                return False 
-        
-        # no collision detected, apply the new walk vector 
-        self.walk_vector = potent_walk_vector
+
+        # constrain to the garden's boundaries 
+        # boundaries = [ (x_min, x_max), (y_min, y_max), (z_min, z_max)]
+        current_pos = (potent_walk_vector[0], potent_walk_vector[1] + self.height_offset, potent_walk_vector[2])
+        # current_pos = (self.walk_vector[0], self.walk_vector[1] + self.height_offset, self.walk_vector[2])
+        distance = 2
+        for i in range(3):
+            # check if moving to desired x position is valid or if colliding with props 
+            # direction = np.sign(self.walk_direction[i])
+            # potent_pos = current_pos[i] + (direction * self.walking_speed)
+            potent_new_walk_vector = list(current_pos)
+            potent_new_walk_vector[i] = potent_walk_vector[i]
+            # get the potential next bounding box 
+            minc = (potent_new_walk_vector[0] - distance,
+                    potent_new_walk_vector[1] - distance,
+                    potent_new_walk_vector[2] - distance)
+            maxc = (potent_new_walk_vector[0] + distance,
+                    potent_new_walk_vector[1] + distance,
+                    potent_new_walk_vector[2] + distance)
+            # check against each prop 
+            blocked = False 
+            for prop in obstacles:
+                obstacle_min, obstacle_max = prop.get_bounding_volume() 
+                if collisionTest_AABBs(minc, maxc, obstacle_min, obstacle_max):
+                    blocked = True 
+                    break 
+            # if not blocked by any prop, allow movement to the desired x position 
+            if not blocked:
+                self.walk_vector[i] = potent_new_walk_vector[i]
         return True
+
+        # for i in range(3):
+        #     # attempted_walk_vector_value = self.walk_vector[i]
+        #     min_value = boundaries[i][0]
+        #     max_value = boundaries[i][1]
+        #     potent_walk_vector[i] = max(min(potent_walk_vector[i], max_value), min_value)
+        # # print("walk vecctor:", self.walk_vector)      # for testing
+
+        # # build the potential aabb 
+        # collision_zone = (2.35, 2.35, 2.35)
+        # bee_potential_mins = (potent_walk_vector[0] - collision_zone[0], 
+        #                       potent_walk_vector[1] + self.height_offset - collision_zone[1], 
+        #                       potent_walk_vector[2] - collision_zone[2])
+        # bee_potential_maxs = (potent_walk_vector[0] + collision_zone[0], 
+        #                       potent_walk_vector[1] + self.height_offset + collision_zone[1], 
+        #                       potent_walk_vector[2] + collision_zone[2])
+        
+        # # check for collisions 
+        # for prop in obstacles:
+        #     obs_min, obs_max = prop.get_bounding_volume()
+        #     if collisionTest_AABBs(bee_potential_mins, bee_potential_maxs, 
+        #                            obs_min, obs_max):
+        #         return False 
+        
+        # # no collision detected, apply the new walk vector 
+        # self.walk_vector = potent_walk_vector
+        # return True
 
     # update the animation parameters 
     def update_animations(self):
@@ -313,7 +349,7 @@ class Bee:
         eye_red_color = (204/255, 0, 0)
         red_iris_color = (153/255, 0, 0)
 
-        collision_zone = (2.35, 2.35, 2.35)
+        collision_zone = (2, 2, 2)
         min_coords = ((self.walk_vector[0] - collision_zone[0]), 
                       (self.walk_vector[1] + self.height_offset - collision_zone[1]), 
                       (self.walk_vector[2] - collision_zone[2]))
@@ -766,7 +802,7 @@ class Moth:
         self.health = 100
         self.max_health = 100
 
-        self.move_speed = 0.15 
+        self.move_speed = 0.30 
         self.anim_speed = 1
         self.yaw = 0
 
@@ -796,16 +832,19 @@ class Moth:
         self.leg_angle = math.sin(pygame.time.get_ticks() * self.leg_speed * self.anim_speed) * self.leg_range  # Adjust speed and range
     
 
-    def draw_moth(self, bee:Bee, draw_bounding_boxes=False):
+    def draw_moth(self, bee:Bee, draw_bounding_boxes=False, obstacles:list=[]):
+        # if dead, don't render 
         if self.health <= 0:
-            # if dead, don't render 
-            pass 
+            return 
 
+        # if not dead, first update flying animations 
         self.update_animations()
 
         glPushMatrix()
+        # get the current position
         current_pos = (self.current_x_pos, self.current_y_pos, self.current_z_pos)
 
+        # if following it's patrol route, check if the bee is in range to chase 
         if not self.chasing_bee:
             # check if bee is within range before we continue upon our path 
             if  np.abs(current_pos[0] - bee.walk_vector[0])                         <= 15 and \
@@ -817,40 +856,46 @@ class Moth:
         if self.chasing_bee:
             current_target = (bee.walk_vector[0], bee.walk_vector[1] + bee.height_offset, bee.walk_vector[2])
             # NOTE: may add so it stop chasing you if out of range again here...tbd if i finish the project by friday 
-        # if bee not within range, follow the target positions of our pre-determined path 
+        # if bee not within range, follow our patrol route 
         else:
             # check if we are already at the target positions 
             current_target = (self.target_x_pos, self.target_y_pos, self.target_z_pos)
 
         # collisision aabb zone 
-        if self.chasing_bee: distance = 3 
-        else: distance = 1
+        if self.chasing_bee: distance = 3 # if chasing, check if bee is within a radius of 3 cube 
+        else: distance = 1  # if patrolling, check if next target point is within a radius of 1 cube 
 
-        # if within a distance from the target point 
+        # get the min, max coords of the appropriate bounding box 
         min_coords = ((current_pos[0] - distance), (current_pos[1] - distance), (current_pos[2] - distance))
         max_coords = ((current_pos[0] + distance), (current_pos[1] + distance), (current_pos[2] + distance))
 
+        # draw aabb box 
         if draw_bounding_boxes:
             draw_AABB(min_coords, max_coords, center=current_pos)
 
         # if collided with it's target positions (either the bee or the next checkpoint in it's patrol route)
-        # if collisionTest_AABBs(min_coords1=min_coords, max_coords1=max_coords, )
         if  np.abs(current_pos[0] - current_target[0])  < distance and \
             np.abs(current_pos[1] - current_target[1])  < distance and \
             np.abs(current_pos[2] - current_target[2])  < distance:
-            if not self.chasing_bee: # if on the patrol path, go to the next target point 
+            # if on the patrol path, go to the next target point 
+            if not self.chasing_bee: 
                 # get the next target position in the list 
                 new_target = self.target_positions[(self.target_positions.index(current_target) + 1) % len(self.target_positions)]
-                print(f"--hit a target point...new target point is {new_target}")
+                # print(f"--hit a target point...new target point is {new_target}")
                 self.target_x_pos, self.target_y_pos, self.target_z_pos = new_target[0], new_target[1], new_target[2]
-            else: # if chasing bee, this means we got close enough to the bee 
-                print(f"--hit the bee...going back to spawn")
-                # bee.handle_collision()
+            # if chasing bee, this means we got close enough to the bee
+            else:  
+                print(f"--hit the bee...going back to spawn to patrol")
+                # if bee was angry, we lose health, bee gets points 
                 if bee.angry_bee_mode:
                     bee.score += 10
+                    self.health -= 34
+                    print(f"--bee health is now {self.health}")
+                # if bee was not angry, bee loses health
                 else:
                     bee.health_percentage -= 20
 
+                # for all moth-bee collisions, moth is set back to its spawn point
                 self.chasing_bee = False 
                 self.target_x_pos = self.target_positions[0][0]
                 self.target_y_pos = self.target_positions[0][1]
@@ -862,28 +907,99 @@ class Moth:
                 
         # if game is paused, no updates to the position or rotation of the moth 
         if not self.paused:
-            # get the directions the moth is moving in (positive or negative ) 
+            # get the directions the moth is moving in (positive or negative) 
             dx, dy, dz = 0, 0, 0
+
+            # 1. check if moving to desired x positions is valid or if colliding with props 
             if not (np.abs(current_pos[0] - current_target[0]) <= 1): 
                 if current_pos[0] < current_target[0]: dx = 1
                 else: dx = -1
-                self.current_x_pos += dx * self.move_speed      # updates x_pos 
+            potent_x_pos = self.current_x_pos + (dx * self.move_speed)
+            # get the potential next bounding box 
+            minc = (potent_x_pos - distance,
+                    self.current_y_pos - distance,
+                    self.current_z_pos - distance)
+            maxc = (potent_x_pos + distance,
+                    self.current_y_pos + distance,
+                    self.current_z_pos + distance)
+            # check against each prop 
+            blocked = False 
+            for prop in obstacles:
+                obstacle_min, obstacle_max = prop.get_bounding_volume() 
+                if collisionTest_AABBs(minc, maxc, obstacle_min, obstacle_max):
+                    blocked = True 
+                    break 
+            # if not blocked by any prop, allow movement to the desired x position 
+            if not blocked:
+                self.current_x_pos = potent_x_pos
+
+
+            # 2. check if moving to desired y position is valid or if colliding with props 
             if not (np.abs(current_pos[1] - current_target[1]) <= 1): 
                 if current_pos[1] < current_target[1]: dy = 1
                 else: dy = -1
-                self.current_y_pos += dy * self.move_speed      # updates y_pos 
+            potent_y_pos = self.current_y_pos + (dy * self.move_speed)
+            # get the potential next bounding box 
+            minc = (self.current_x_pos - distance,
+                    potent_y_pos - distance,
+                    self.current_z_pos - distance)
+            maxc = (self.current_x_pos + distance,
+                    potent_y_pos + distance,
+                    self.current_z_pos + distance)
+            # check against each prop 
+            blocked = False 
+            for prop in obstacles:
+                obstacle_min, obstacle_max = prop.get_bounding_volume() 
+                if collisionTest_AABBs(minc, maxc, obstacle_min, obstacle_max):
+                    blocked = True 
+                    break 
+            # if not blocked by any prop, allow movement to the desired x position 
+            if not blocked:
+                self.current_y_pos = potent_y_pos
+
+
+
+            # 3. check if moving to desired x position is valid or if colliding with props 
             if not (np.abs(current_pos[2] - current_target[2]) <= 1): 
                 if current_pos[2] < current_target[2]: dz = 1
                 else: dz = -1
-                self.current_z_pos += dz * self.move_speed      # updates z_pos
+            potent_z_pos = self.current_z_pos + (dz * self.move_speed)
+            # get the potential next bounding box 
+            minc = (self.current_x_pos - distance,
+                    self.current_y_pos - distance,
+                    potent_z_pos - distance)
+            maxc = (self.current_x_pos + distance,
+                    self.current_y_pos + distance,
+                    potent_z_pos + distance)
+            # check against each prop 
+            blocked = False 
+            for prop in obstacles:
+                obstacle_min, obstacle_max = prop.get_bounding_volume() 
+                if collisionTest_AABBs(minc, maxc, obstacle_min, obstacle_max):
+                    blocked = True 
+                    break 
+            # if not blocked by any prop, allow movement to the desired x position 
+            if not blocked:
+                self.current_z_pos = potent_z_pos
+
+
+            #     # self.current_x_pos += dx * self.move_speed      # updates x_pos 
+            # if not (np.abs(current_pos[1] - current_target[1]) <= 1): 
+            #     if current_pos[1] < current_target[1]: dy = 1
+            #     else: dy = -1
+            #     # self.current_y_pos += dy * self.move_speed      # updates y_pos 
+            # if not (np.abs(current_pos[2] - current_target[2]) <= 1): 
+            #     if current_pos[2] < current_target[2]: dz = 1
+            #     else: dz = -1
+            #     # self.current_z_pos += dz * self.move_speed      # updates z_pos
+
+
             # turns directions into angles 
             self.yaw = math.degrees(math.atan2(dx, dz))
 
         # rotate moth to face the correct direction and translate to correct position in the world 
         glTranslatef(self.current_x_pos, self.current_y_pos, self.current_z_pos)
         glRotatef(self.yaw,   0, 1, 0)
-        # glRotatef(pitch, 1, 0, 0)
-
         glScalef(3, 3, 3)
 
         # ---- BODY ----
