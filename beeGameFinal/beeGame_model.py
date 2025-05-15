@@ -755,16 +755,17 @@ class Flower:
         self.head_col  = (1.0, 1.0, 0.0)         # yellow
 
     def draw(self, show_bounding_box:bool):
-        mins, maxs = self.get_bounding_box()
+        mins, maxs = self.get_bounding_volume()
         if show_bounding_box:
+            cx = (mins[0] + maxs[0]) / 2
+            cy = (mins[1] + maxs[1]) / 2
+            cz = (mins[2] + maxs[2]) / 2
             draw_AABB(mins, maxs, 
-                      center=(  self.pos[0], 
-                                (self.pos[1] + ((self.stem_height *0.8) * self.scale[1])) / 2.0, 
-                                self.pos[2]) )
+                      center=(cx, cy, cz))
 
         glPushMatrix()
-        glTranslatef(0, self.stem_height * 0.8, 0)
-        glTranslatef(*self.pos)
+        # glTranslatef(0, self.stem_height * 0.8, 0)
+        glTranslatef(self.pos[0], (self.stem_height * self.scale[1]) / 2, self.pos[2])
         glScalef(*self.scale)
 
         # 1) Stem
@@ -795,20 +796,24 @@ class Flower:
 
         glPopMatrix()
 
-    def get_bounding_box(self):
+    def get_bounding_volume(self):
         sx, sy, sz = self.scale 
         half_width = (self.stem_thickness * sx) / 2.0 
         height = self.stem_height * sy 
         px, py, pz = self.pos 
 
         mins = (    px - half_width, 
-                    py - 15, 
+                    py, 
                     pz - half_width )
         maxs = (    px + half_width, 
                     py + height, 
                     pz + half_width )
         
         return mins, maxs
+
+
+
+
 
 def create_flowers(num_flowers:int, force_regenerate:bool):
     scalings = [(2, 2, 2), (3.5, 3.5, 3.5)]

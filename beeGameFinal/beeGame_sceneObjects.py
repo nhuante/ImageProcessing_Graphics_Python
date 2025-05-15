@@ -3,7 +3,7 @@ import os
 import numpy as np
 from OpenGL.GL import *
 from beeGame_OBJFileLoader import OBJ       # or wherever your OBJ class lives
-from beeGame_collisions import Transform, apply_transform_to_mesh
+from beeGame_collisions import Transform, apply_transform_to_mesh, draw_AABB
 import random 
 
 '''
@@ -31,7 +31,10 @@ class Prop:
         self.bv_type = bv_type
 
     # draws the prop 
-    def draw(self):
+    def draw(self, show_bounding_box:bool):
+        if show_bounding_box:
+                mins, maxs, center, _ = self.obj.cal_minMax()
+                draw_AABB(mins, maxs, center)
         glCallList(self.obj.gl_list)
 
     # gets the bv of the prop 

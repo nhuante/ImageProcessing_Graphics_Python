@@ -69,6 +69,24 @@ def set_3d_projection():
 
     glMatrixMode(GL_MODELVIEW)
 
+# regenerate flowers and pollen particles
+def generate_flowers_pollen(force_regnerate:bool):
+    # flowers 
+    flowers, flower_positions = create_flowers(num_flowers=6, force_regenerate=force_regnerate) 
+
+    # pollen particles 
+    pollen_particles = []
+    for n in range(len(flower_positions)):
+        if n > (len(flower_positions)//2) - 1: 
+            pollen_height = flower_positions[n][1] + (70 * 3.5) + 8
+        else: 
+            pollen_height = flower_positions[n][1] + (70 * 2) + 8
+        pollen_particles.append(Pollen( radius=2, color=(215/255, 215/255, 25/255), pollen_id=n+1, 
+                                        initial_x=flower_positions[n][0],                 # x_pos 
+                                        initial_y=pollen_height ,  # y_pos
+                                        initial_z=flower_positions[n][2]))                  # z_pos
+        
+    return flowers, flower_positions, pollen_particles
 
 
 def main():
@@ -98,30 +116,19 @@ def main():
 
     # initialize all the props 
     props = []
-    flower_positions = []
+    # flower_positions = []
     # grass
     # for grass in create_grass_objects():
     #     props.append(grass)
 
-    # flowers 
-    # flowers, flower_positions = create_flower_objects(num_flowers=2)
-    # for flower in flowers:
-    #     props.append(flower)
-    # for position in flower_positions:
-    #     print(position)
-
     # beehive 
     props.append(create_beehive())
 
-    # pollen particles 
-    pollen_particles = []
-    for n in range(len(flower_positions)):
-        if n > (len(flower_positions)//2) - 1: pollen_height = 15
-        else: pollen_height = 35
-        pollen_particles.append(Pollen( radius=2, color=(215/255, 215/255, 25/255), pollen_id=n+1, 
-                                        initial_x=flower_positions[n][0]+2,                 # x_pos 
-                                        initial_y=flower_positions[n][1] + pollen_height ,  # y_pos
-                                        initial_z=flower_positions[n][2]))                  # z_pos
+
+    # FIXME: flowers and pollen 
+    flowers, flower_positions, pollen_particles = generate_flowers_pollen(force_regnerate=False)
+
+
 
     # moth enemies 
     moth_enemies = [] 
@@ -137,9 +144,6 @@ def main():
                                  target_positions=moth_target_positions[n]))
         print(f"---done drawing moth with id: {moth_enemies[0].moth_id}")
 
-
-    # flowers 
-    flowers, flower_positions = create_flowers(num_flowers=6, force_regenerate=False) 
 
 
     # initialize the camera: camera parameters 
@@ -315,7 +319,7 @@ def main():
                     elif event.key == pygame.K_7:                       # toggle bounding boxes shown 
                         show_bounding_boxes = not show_bounding_boxes
                     elif event.key == pygame.K_8:                       # force regenerate flower positions 
-                        flowers, flower_positions = create_flowers(num_flowers=6, force_regenerate=True) 
+                        flowers, flower_positions, pollen_particles = generate_flowers_pollen(force_regnerate=True) 
                     # un-pause the game -----------------------------------------------------
                     elif event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
                         playerBee.paused = not playerBee.paused       # will pause the current bee animation
@@ -391,7 +395,7 @@ def main():
                     playerBee.walk_speed = playerBee.walk_speed_mp * playerBee.anim_speed
                     playerBee.update_walk_vector(reverse=reverse, 
                                                 boundaries=[garden_x_boundaries, garden_y_boundaries, garden_z_boundaries], 
-                                                obstacles=props)
+                                                obstacles=(props + flowers))
                     playerBee.actively_moving = True 
                     # print(F"\nBEE ACTIVELY MOVING - {playerBee.actively_moving} ")
                 else:
@@ -479,18 +483,16 @@ def main():
         if game_mode == "Level 1":
             for moth in moth_enemies:
                 moth.paused = playerBee.paused
-                moth.draw_moth(bee=playerBee, draw_bounding_boxes=show_bounding_boxes, obstacles=props)
+                moth.draw_moth(bee=playerBee, draw_bounding_boxes=show_bounding_boxes, obstacles=(props + flowers))
         # flowers 
-        for flower in flowers:
-            flower.draw(show_bounding_box=show_bounding_boxes)
+        # for flower in flowers:
+        #     flower.draw(show_bounding_box=show_bounding_boxes)
 
         # draw all the props that were imported as obj files 
-        for prop in props:
-            prop.draw()
-            curr_position = prop.t.translation
-            if show_bounding_boxes:
-                mins, maxs, center, _ = prop.obj.cal_minMax()
-                draw_AABB(mins, maxs, center)
+        for prop in (props + flowers):
+            prop.draw(show_bounding_box=show_bounding_boxes)
+            # curr_position = prop.t.translation
+            
 
         
         set_2d_projection()     # switch to 2d mode so we can draw the gui 
