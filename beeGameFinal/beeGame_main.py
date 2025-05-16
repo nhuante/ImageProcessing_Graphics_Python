@@ -182,7 +182,7 @@ def main():
                                 rotation=(grass_position[3], grass_position[4], grass_position[5], grass_position[6]), 
                                 scale=(grass_position[7], grass_position[8], grass_position[9]), 
                                 bv_type=grass_position[10]))
-        print("creating the prop objects for grass")
+        # print("creating the prop objects for grass")
         glPopMatrix()
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
@@ -203,14 +203,25 @@ def main():
     moth_target_positions = [   [(25, 35, 75), (50, 15, 75), (50, 20, 20), (25, 35, 20)], 
                                 [(125, 10, 35), (150, 15, 75), (175, 10, 35), (150, 16, 0)],
                                 [(16, 16, -90), (32, 16, -50), (80, 16, -70), (55, 16, -95)],
-                                [(125, 40, -10), (165, 20, -40), (180, 45, -80), (100, 35, -50)], 
-
+                                [(125, 40, -10), (165, 20, -40), (180, 45, -80), (100, 35, -50)]
                             ]
     for n in range(len(moth_target_positions)):
         moth_enemies.append(Moth(moth_id=n, 
                                 initial_x=25, initial_y=40, initial_z=75, 
                                 target_positions=moth_target_positions[n]))
         print(f"---done drawing moth with id: {moth_enemies[n].moth_id}")
+
+    moth_target_positions_hard = [  [(25, 145, 75), (50, 125, 75), (50, 105, 20), (25, 145, 20)], 
+                                    [(125, 100, 35), (150, 105, 75), (175, 100, 35), (105, 106, 0)],
+                                    [(16, 106, -90), (32, 106, -50), (80, 106, -70), (55, 106, -95)],
+                                    [(125, 150, -10), (165, 130, -40), (180, 155, -80), (100, 145, -50)]
+                                ]
+    extra_moths = []
+    for n in range(len(moth_target_positions_hard)):
+        extra_moths.append(Moth(moth_id=n, 
+                                initial_x=25, initial_y=40, initial_z=75, 
+                                target_positions=moth_target_positions[n]))
+    print(f"---done drawing extra moths for hard mode")
 
 
     # initialize the camera: camera parameters 
@@ -291,6 +302,15 @@ def main():
                                 game_result = None
                                 game_mode = "Level 1"       # update game mode 
                                 playerBee.reset_bee_switching_rooms()
+                            elif button_clicked == "difficulty":
+                                if ui.difficulty_button.label == "Normal":
+                                    ui.difficulty_button.label = "Hard"
+                                    moth_enemies = moth_enemies + extra_moths
+                                    ui.difficulty_button.initial_color = (0.851, 0.122, 0)
+                                else:
+                                    ui.difficulty_button.label = "Normal"
+                                    moth_enemies = moth_enemies[:(len(moth_enemies)- len(extra_moths))]
+                                    ui.difficulty_button.initial_color = (0.82, 0.671, 0)
                             elif button_clicked == "help":
                                 print(" help-lobby menu loading.....")
                                 # handle the ui change 

@@ -108,28 +108,42 @@ class UI:
 
 
         # buttons at the bottom (start game and help)
-        self.num_of_bottom_buttons = 2
+        self.num_of_bottom_buttons_lobby = 3
+        self.num_of_bottom_buttons_level = 2
         self.bottom_button_width = 100 
         self.bottom_button_height = 40 
-        self.bottom_gap_width = (self.win_width - self.num_of_bottom_buttons * self.bottom_button_width) // (self.num_of_bottom_buttons + 1)
+        self.bottom_gap_width_lobby = (self.win_width - self.num_of_bottom_buttons_lobby * self.bottom_button_width) // (self.num_of_bottom_buttons_lobby + 1)
+        self.bottom_gap_width_level = (self.win_width - self.num_of_bottom_buttons_level * self.bottom_button_width) // (self.num_of_bottom_buttons_level + 1)
 
         # start game button - lobby
         self.start_game_button = Button(label="Start Game", button_width=self.bottom_button_width, 
                                         button_height=self.bottom_button_height,
 
-                                        bottomLeft_x=self.bottom_gap_width,                             # change this to position it's x position 
+                                        bottomLeft_x=self.bottom_gap_width_lobby,                             # change this to position it's x position 
                                         bottomLeft_y=self.win_height-110, 
 
                                         screen_height=self.win_height, 
                                         screen_width=self.win_width, 
                                         
                                         initial_color=(0, 91/255, 27/255))  
+        
+        # change difficulty button - lobby
+        self.difficulty_button = Button(label="Normal", button_width=self.bottom_button_width, 
+                                        button_height=self.bottom_button_height,
+
+                                        bottomLeft_x=self.bottom_gap_width_lobby * 2 + self.bottom_button_width,                             # change this to position it's x position 
+                                        bottomLeft_y=self.win_height-110, 
+
+                                        screen_height=self.win_height, 
+                                        screen_width=self.win_width, 
+                                        
+                                        initial_color=(0.82, 0.671, 0))  
 
         # help button - lobby
         self.help_button = Button(label="Help", button_width=self.bottom_button_width, 
                                   button_height=self.bottom_button_height,
 
-                                  bottomLeft_x=self.bottom_gap_width * 2 + self.bottom_button_width,    # change this to position it's x position 
+                                  bottomLeft_x=self.bottom_gap_width_lobby * 3 + self.bottom_button_width * 2,    # change this to position it's x position 
                                   bottomLeft_y=self.win_height-110, 
 
                                   screen_height=self.win_height, 
@@ -141,7 +155,7 @@ class UI:
         self.help_game_button = Button(label="Help", button_width=self.bottom_button_width, 
                                        button_height=self.bottom_button_height, 
                                        
-                                       bottomLeft_x=self.bottom_gap_width * 2 + self.bottom_button_width * 1.5, 
+                                       bottomLeft_x=self.bottom_gap_width_level * 2 + self.bottom_button_width * 1.5, 
                                        bottomLeft_y=50, 
                                        
                                        screen_height=self.win_height, 
@@ -153,7 +167,7 @@ class UI:
         self.toLobby_game_button = Button(label="Exit to Lobby", button_width=1.5*self.bottom_button_width, 
                                        button_height=self.bottom_button_height, 
                                        
-                                       bottomLeft_x=self.bottom_gap_width , 
+                                       bottomLeft_x=self.bottom_gap_width_level , 
                                        bottomLeft_y=50, 
                                        
                                        screen_height=self.win_height, 
@@ -233,6 +247,9 @@ class UI:
         
         self.help_button.draw_text()
         self.help_button.draw_button()
+
+        self.difficulty_button.draw_text()
+        self.difficulty_button.draw_button()
 
         # draw header rectangle 
         self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y= self.win_height-55, 
@@ -414,6 +431,8 @@ class UI:
                     button_clicked = "start"
                 elif self.help_button.is_clicked(mouse_x, mouse_y):
                     button_clicked = "help"
+                elif self.difficulty_button.is_clicked(mouse_x, mouse_y):
+                    button_clicked = "difficulty"
         elif mode == "Level 1":
             if help: # if in help menu only listen for exit help button 
                 if self.exitHelp_button.is_clicked(mouse_x, mouse_y):
