@@ -449,10 +449,10 @@ def main():
                 # update the bee's height
                 height_offset_per = 0.0 
                 if key_shift_on:
-                    height_offset_per = +0.5
+                    height_offset_per = +0.25
                     playerBee.update_height_offset(height_offset_per, garden_y_boundaries, (props + flowers))
                 elif key_ctrl_on:
-                    height_offset_per = -0.5
+                    height_offset_per = -0.25
                     playerBee.update_height_offset(height_offset_per, garden_y_boundaries, (props + flowers))
 
                 # handle angry mode 
@@ -464,21 +464,29 @@ def main():
                 # camera.tilt_angle_horizontal, camera.tilt_angle_vertical = 0.0, 0.0
                 # update camera parameters 
                 if key_a_on:
-                    camera.tilt_angle_horizontal += 2
+                    if camera.view_mode in ["first-person", "follow"]:
+                        max_horizontal_tilt = 15
+                    else:
+                        max_horizontal_tilt = 45
+                    camera.tilt_angle_horizontal  = min(camera.tilt_angle_horizontal + 2, max_horizontal_tilt)
                 elif key_d_on:
-                    camera.tilt_angle_horizontal -= 2
+                    if camera.view_mode in ["first-person", "follow"]:
+                        min_horizontal_tilt = -15
+                    else:
+                        min_horizontal_tilt = -45
+                    camera.tilt_angle_horizontal  = max(camera.tilt_angle_horizontal - 2, min_horizontal_tilt)
                 elif key_w_on:
-                    # if camera located at negative z position, looking up is negative rotation about X
-                    # if camera.eye_pos[2] < 0: camera.tilt_angle_vertical -= 1
-                    # if camera located at positive z position, looking up is positive rotation about X
-                    # else: camera.tilt_angle_vertical += 1
-                    camera.tilt_angle_vertical -= 2
+                    if camera.view_mode in ["first-person", "follow"]:
+                        max_vertical_tilt = -15
+                    else:
+                        max_vertical_tilt = -65
+                    camera.tilt_angle_vertical  = max(camera.tilt_angle_vertical - 2, max_vertical_tilt)
                 elif key_s_on:
-                    # if camera located at negative z position, looking down is negative rotation about X
-                    # if camera.eye_pos[2] < 0: camera.tilt_angle_vertical += 1
-                    # if camera located at positive z position, looking down is positive rotation about X
-                    # else: camera.tilt_angle_vertical -= 1
-                    camera.tilt_angle_vertical += 2
+                    if camera.view_mode in ["first-person", "follow"]:
+                        min_vertical_tilt = 15
+                    else:
+                        min_vertical_tilt = 25
+                    camera.tilt_angle_vertical  = min(camera.tilt_angle_vertical + 2, min_vertical_tilt)
                 # update camera zooming 
                 if key_q_on:
                     camera.zoom_distance += 0.5 # had to change to 0.5 otherwise get a black screen when actively zooming in 
@@ -559,18 +567,18 @@ def main():
                 #     moth.paused = True
 
             else:
-                ui.draw_lobby_gui()         # normal lobby ui
+                ui.draw_lobby_gui(bee=playerBee)         # normal lobby ui
         elif game_mode == "Level 1":
             if help_showing:
                 ui.draw_help_menu()         # help screen (pause while we show)
                 playerBee.paused = True
             elif game_over:
-                ui.draw_end_of_game_gui(gameWon=game_result)
+                ui.draw_end_of_game_gui(gameWon=game_result, bee=playerBee)
             elif playerBee.paused and not help_showing: 
                 ui.draw_level_pause_gui()   # level pause screen 
             else:
                 ui.draw_level_gui(score=playerBee.score, health=playerBee.health_percentage, 
-                                timer_left_ms=playerBee.game_time_to_win, level=playerBee.level)         # normal level ui
+                                timer_left_ms=playerBee.game_time_to_win, level=playerBee.level, bee=playerBee)         # normal level ui
         
 
         glPopMatrix()           # get rid of the matrix changes from gui drawing 

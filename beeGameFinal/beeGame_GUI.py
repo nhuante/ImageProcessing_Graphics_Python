@@ -83,9 +83,29 @@ class UI:
         self.help_menu_title = "Lost?"
         self.room_text_font = GLUT_BITMAP_HELVETICA_18
 
-        # self.score_text = "Score: XXXX"
-        # self.bee_health_bar = "Bee Health: 100%"
-        # self.level_timer = "Timer: XXXX"
+        # load in bee mode images 
+        self.mode_textures = {} 
+        for mode, file_name in [    ("normal",   "./resources/imgs/normal_bee_mode.png"), 
+                                    ("angry",    "./resources/imgs/angry_bee_mode.png"), 
+                                    ("charging",    "./resources/imgs/charging_bee_mode.png"), 
+                                    ("hurt",    "./resources/imgs/hurt_bee.png"), 
+                                    ("dead",    "./resources/imgs/dead_bee.png"), 
+                                    ("won",    "./resources/imgs/winner_bee_2.png")  ]: 
+            surf = pygame.image.load(file_name).convert_alpha()
+            icon_h = 42
+            icon_w = int(icon_h * surf.get_width() / surf.get_height())
+
+            surf = pygame.transform.smoothscale(surf, (icon_w, icon_h))
+            # w, h = surf.get_size() 
+            tex_data = pygame.image.tostring(surf, "RGBA", True)
+            tex_id = glGenTextures(1) 
+            glBindTexture(GL_TEXTURE_2D, tex_id)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, icon_w, icon_h, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex_data)
+            self.mode_textures[mode] = (tex_id, icon_w, icon_h)
+        glBindTexture(GL_TEXTURE_2D, 0)
+
 
         # buttons at the bottom (start game and help)
         self.num_of_bottom_buttons = 2
@@ -171,9 +191,41 @@ class UI:
         glEnd()
 
     # draw the gui elements (buttons) on the lobby screen
-    def draw_lobby_gui(self):
+    def draw_lobby_gui(self, bee):
+
         # draw the top text (lobby)
         self.draw_text(self.lobby_text, self.win_width // 2 - 30, self.win_height - 30)
+
+        # draw the appropriate bee mode image to the right of the lobby text 
+        if bee.angry_bee_mode: mode = "angry"
+        elif bee.is_recharging: mode = "charging"
+        else: mode = "normal"
+
+        tex_id, iw, ih = self.mode_textures[mode]
+        icon_x = self.win_width // 2 + 90
+        icon_y = self.win_height - 45
+
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, tex_id)
+        glColor3f(1,1,1)
+        glBegin(GL_QUADS)
+        # lower-left
+        glTexCoord2f(0,0); glVertex2f(icon_x,      icon_y)
+        # lower-right
+        glTexCoord2f(1,0); glVertex2f(icon_x+iw,   icon_y)
+        # upper-right
+        glTexCoord2f(1,1); glVertex2f(icon_x+iw,   icon_y+ih)
+        # upper-left
+        glTexCoord2f(0,1); glVertex2f(icon_x,      icon_y+ih)
+        glEnd()
+        glBindTexture(GL_TEXTURE_2D, 0)
+        glDisable(GL_TEXTURE_2D)
+
+        # draw the current countdown number next to the image to the right of the bee mode image 
+        if bee.angry_bee_mode or bee.is_recharging: countdown = str(bee.current_countdown_num)
+        else: countdown = ""
+
+        self.draw_text(countdown, self.win_width // 2 + 150, self.win_height - 30)
 
         # draw the buttons (start game and help)
         self.start_game_button.draw_text()
@@ -183,7 +235,7 @@ class UI:
         self.help_button.draw_button()
 
         # draw header rectangle 
-        self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y= self.win_height-50, 
+        self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y= self.win_height-55, 
                             topRight_x=810, topRight_y=810, 
                             color=(64/255, 64/255, 64/255))
 
@@ -199,7 +251,7 @@ class UI:
 
 
     # draw the gui elements in the level 
-    def draw_level_gui(self, score, level, health, timer_left_ms):
+    def draw_level_gui(self, score, level, health, timer_left_ms, bee:Bee):
         distance_from_top = self.win_height - 30
         # draw the top text (level 1)
         self.draw_text(f"Level:{level}", self.win_width - 300, distance_from_top)
@@ -212,6 +264,41 @@ class UI:
         elif health <= 25: health_color = (204/255, 0, 0)
         else: health_color = (1, 1, 1)
         self.draw_text(f"Health: {health}%", 230, distance_from_top, color=health_color)                  # health 
+
+        
+
+        # draw the appropriate bee mode image at the center of the header
+        if bee.angry_bee_mode: mode = "angry"
+        elif bee.is_recharging: mode = "charging"
+        elif bee.health_percentage < 50: mode = "hurt"
+        else: mode = "normal"
+
+        tex_id, iw, ih = self.mode_textures[mode]
+        icon_x = self.win_width // 2 -15
+        icon_y = self.win_height - 45
+
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, tex_id)
+        glColor3f(1,1,1)
+        glBegin(GL_QUADS)
+        # lower-left
+        glTexCoord2f(0,0); glVertex2f(icon_x,      icon_y)
+        # lower-right
+        glTexCoord2f(1,0); glVertex2f(icon_x+iw,   icon_y)
+        # upper-right
+        glTexCoord2f(1,1); glVertex2f(icon_x+iw,   icon_y+ih)
+        # upper-left
+        glTexCoord2f(0,1); glVertex2f(icon_x,      icon_y+ih)
+        glEnd()
+        glBindTexture(GL_TEXTURE_2D, 0)
+        glDisable(GL_TEXTURE_2D)
+
+        # draw the current countdown number next to the image to the right of the bee mode image 
+        if bee.angry_bee_mode or bee.is_recharging: countdown = str(bee.current_countdown_num)
+        else: countdown = ""
+
+        self.draw_text(countdown, self.win_width // 2 + 40, self.win_height - 30)
+
         
         self.draw_text(f"Sec Left: {timer_left_ms//1000}", self.win_width - 150, distance_from_top)    # timer 
 
@@ -239,7 +326,7 @@ class UI:
                             color=(0, 153/255, 0))
         
     # draw the gui elements in the level (when game is over)
-    def draw_end_of_game_gui(self, gameWon: bool):
+    def draw_end_of_game_gui(self, gameWon: bool, bee:Bee):
         # draw the main text 
         if gameWon: 
             text = "You Won!"
@@ -249,6 +336,32 @@ class UI:
             color = (204/255, 0, 0)
             x_offset_to_center = 100
         self.draw_text(text, self.win_width // 2 - x_offset_to_center, self.win_height // 2)
+
+
+        # draw the appropriate bee mode image at the center of the header
+        if bee.health_percentage <= 0: mode = "dead"
+        else: mode = "won"
+        
+        for offset in [-200, 200]:
+            tex_id, iw, ih = self.mode_textures[mode]
+            icon_x = self.win_width // 2 + offset
+            icon_y = self.win_height // 2 - 15
+
+            glEnable(GL_TEXTURE_2D)
+            glBindTexture(GL_TEXTURE_2D, tex_id)
+            glColor3f(1,1,1)
+            glBegin(GL_QUADS)
+            # lower-left
+            glTexCoord2f(0,0); glVertex2f(icon_x,      icon_y)
+            # lower-right
+            glTexCoord2f(1,0); glVertex2f(icon_x+iw,   icon_y)
+            # upper-right
+            glTexCoord2f(1,1); glVertex2f(icon_x+iw,   icon_y+ih)
+            # upper-left
+            glTexCoord2f(0,1); glVertex2f(icon_x,      icon_y+ih)
+            glEnd()
+            glBindTexture(GL_TEXTURE_2D, 0)
+            glDisable(GL_TEXTURE_2D)
 
         # draw the buttons (toLobby, help)
         self.toLobby_game_button.draw_text()
@@ -260,7 +373,7 @@ class UI:
         # draw banner rectangle 
         self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y=self.win_height // 2 - 20, 
                             topRight_x=810, topRight_y=self.win_height // 2 + 30, 
-                            color=(0, 153/255, 0))
+                            color=(64/255, 64/255, 64/255))
         
     # draw the loading screen 
     def draw_loading_screen(self, dots:str):

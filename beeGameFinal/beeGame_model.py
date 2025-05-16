@@ -55,9 +55,16 @@ def rotate_vector(vector, angle_degrees, rot_axis = "Y", custom_axis:tuple=()):
     rotated_vector = np.dot(rot_matrix, vector)
 
     if rot_axis == "CUSTOM" and custom_axis != tuple():
-        rotated_vector = (vector * cosine_theta + \
-                      np.cross(custom_axis, vector) * sin_theta + \
-                      custom_axis * (custom_axis.dot(vector)) * (1 - cosine_theta))
+        # ensure unit length
+        u = custom_axis / np.linalg.norm(custom_axis)
+        ux, uy, uz = u
+        # Rodrigues' rotation formula components
+        K = np.array([[   0, -uz,  uy],
+                      [ uz,   0, -ux],
+                      [-uy,  ux,   0]])
+        I = np.eye(3)
+        R = I*cosine_theta + (1-cosine_theta)*np.outer(u,u) + K*sin_theta
+        return R.dot(vector)
 
     return rotated_vector
 
@@ -356,6 +363,7 @@ class Bee:
         blue_iris_color = (51/255,153/255,255/255)
         eye_red_color = (204/255, 0, 0)
         red_iris_color = (153/255, 0, 0)
+        body_grey_color = (0.541, 0.541, 0.525)
 
         collision_zone = (2, 2, 2)
         min_coords = ((self.walk_vector[0] - collision_zone[0]), 
@@ -395,6 +403,10 @@ class Bee:
         # ---- MAIN BODY ----
         glPushMatrix()
         glColor3f(1, 1, 0)      # yellow body
+        if self.angry_bee_mode:
+            glColor3f(*red_iris_color)
+        elif self.is_recharging:
+            glColor3f(*body_grey_color)
         glutSolidCube(4.0)      # create main body cube 
         glPopMatrix()
 
@@ -1454,45 +1466,64 @@ class Camera:
     # Task 8: Update camera parameters (eye_pos and look_at) based on the new 
     #               tilt_angle_horizontal, tilt_angle_vertical, and zoom_distance updated by key input (A, D, W, S, Q, E)
     def update_view(self, playerBee):
+        
         # if in first-person view, we update the view based on the playerBee's direction
         if self.view_mode in ["first-person", "follow"]:
-            if self.view_mode == "follow": follow = True 
-            else: follow = False
+            # if self.view_mode == "follow": 
+            #     follow = True 
+            # else: 
+            #     follow = False
             # we handle this in a separate function 
-            new_eye_pos, new_lookat = self.update_fpv(playerBee, follow=follow)
-        # if in any of the third-person views, we update the view based on keyboard input
-        else:
-            # calculate the current gaze vector
-            base_gaze = self.look_at - self.eye_pos
+            fpv_eye, fpv_look_at = self.update_fpv(playerBee, follow=(self.view_mode=="follow"))
+            gaze = fpv_look_at - fpv_eye
 
-            # # temp for title angle vertical 
-            # new_title_angle_vertical = self.tilt_angle_vertical
-
-            # axis to rotate on for vertical movements 
-            # vert_tilt_axis = "X"
-            camera_right_axis = np.cross(self.view_up, base_gaze)
+            camera_right_axis = np.cross(self.view_up, gaze)
             camera_right_axis /= np.linalg.norm(camera_right_axis)
-            # tilt vertically
-            gaze_after_pitch = rotate_vector(vector=base_gaze, angle_degrees=self.tilt_angle_vertical, 
-                                             rot_axis="CUSTOM", custom_axis=camera_right_axis)
 
-            # tilt horizontally
+            gaze_after_pitch = rotate_vector(vector=gaze, angle_degrees=self.tilt_angle_vertical, 
+                                            rot_axis="CUSTOM", custom_axis=camera_right_axis)
+            
             final_gaze = rotate_vector(vector=gaze_after_pitch, angle_degrees=self.tilt_angle_horizontal, 
-                                             rot_axis="CUSTOM", custom_axis=self.view_up)
-            # new_lookat = self.look_at
-            # new_lookat[0] = self.look_at[0] + self.tilt_angle_horizontal
-            # new_lookat[1] = self.look_at[1] + self.tilt_angle_vertical
-            new_lookat = self.eye_pos + final_gaze
-            ## calculate new eye position by moving the camera along the gaze vector by zoom_distance
-            # calculate the unit vector of the current gaze vector
-            # unit_rotated_gaze = rotated_gaze / np.linalg.norm(rotated_gaze)
-            unit_rotated_gaze = final_gaze / np.linalg.norm(final_gaze)
+                                            rot_axis="CUSTOM", custom_axis=self.view_up)
+            
+            new_lookat = fpv_eye + final_gaze
+            return fpv_eye, new_lookat
 
-            # calculate the new eye_position
-            new_eye_pos = self.eye_pos + unit_rotated_gaze * self.zoom_distance
 
-            # move the rotated look at point along the same amount as the eye position
-            new_lookat = new_lookat + unit_rotated_gaze * self.zoom_distance
+        # if in any of the third-person views, we update the view based on keyboard input
+        # else:
+        # calculate the current gaze vector
+        starting_look_at, starting_eye_pos = self.look_at, self.eye_pos
+        base_gaze = starting_look_at - starting_eye_pos
+
+        # # temp for title angle vertical 
+        # new_title_angle_vertical = self.tilt_angle_vertical
+
+        # axis to rotate on for vertical movements 
+        # vert_tilt_axis = "X"
+        camera_right_axis = np.cross(self.view_up, base_gaze)
+        camera_right_axis /= np.linalg.norm(camera_right_axis)
+        # tilt vertically
+        gaze_after_pitch = rotate_vector(vector=base_gaze, angle_degrees=self.tilt_angle_vertical, 
+                                            rot_axis="CUSTOM", custom_axis=camera_right_axis)
+
+        # tilt horizontally
+        final_gaze = rotate_vector(vector=gaze_after_pitch, angle_degrees=self.tilt_angle_horizontal, 
+                                            rot_axis="CUSTOM", custom_axis=self.view_up)
+        # new_lookat = self.look_at
+        # new_lookat[0] = self.look_at[0] + self.tilt_angle_horizontal
+        # new_lookat[1] = self.look_at[1] + self.tilt_angle_vertical
+        new_lookat = self.eye_pos + final_gaze
+        ## calculate new eye position by moving the camera along the gaze vector by zoom_distance
+        # calculate the unit vector of the current gaze vector
+        # unit_rotated_gaze = rotated_gaze / np.linalg.norm(rotated_gaze)
+        unit_rotated_gaze = final_gaze / np.linalg.norm(final_gaze)
+
+        # calculate the new eye_position
+        new_eye_pos = self.eye_pos + unit_rotated_gaze * self.zoom_distance
+
+        # move the rotated look at point along the same amount as the eye position
+        new_lookat = new_lookat + unit_rotated_gaze * self.zoom_distance
 
         # return new eye position and look-at point
         return new_eye_pos, new_lookat
