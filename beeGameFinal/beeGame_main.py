@@ -301,6 +301,7 @@ def main():
                                 game_over = False 
                                 game_result = None
                                 game_mode = "Level 1"       # update game mode 
+                                playerBee.start_level_timer()
                                 playerBee.reset_bee_switching_rooms()
                             elif button_clicked == "difficulty":
                                 if ui.difficulty_button.label == "Normal":
@@ -496,6 +497,15 @@ def main():
 
                 
                 #--------END: pygame.event.get()
+
+
+                if game_mode == "Level 1" and not playerBee.paused:
+                    playerBee.handle_level_timer()
+                    if playerBee.game_time_to_win <= 0:
+                        playerBee.health_percentage = 0
+
+
+                        
                 # if game is loading, recheck the time passed 
                 if loading_game:
                     # recheck time 
@@ -503,7 +513,6 @@ def main():
                     # print(current_time)
                     if current_time >= loading_game_time + loading_game_start_time:
                         loading_game = False
-
                 # if game is not loading, do all the game stuff
                 else:
                     # if game is paused, handle the pause for the countdown timers 

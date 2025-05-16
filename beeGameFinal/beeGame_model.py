@@ -122,10 +122,12 @@ class Bee:
         # angry mode 
         self.angry_bee_mode = False
         self.angry_mode_start_time = 0              # time angry mode period begins
+        self.angry_mode_length = 1000 * 5           # replace the 5 with num of seconds desired
+
         self.recharge_start_time = 0                # time recharging period begins
         self.is_recharging = False                  # if currently recharging  
-        self.angry_mode_length = 1000 * 5           # replace the 5 with num of seconds desired
         self.recharge_length = 1000 * 10            # replace the 5 with num of seconds desired
+
         self.current_countdown_num = -1
 
         # timer when paused var 
@@ -134,7 +136,9 @@ class Bee:
 
         # game stats
         self.initial_game_timer = 1000 * 120        # in-game timer - replace the 5 with num of seconds desired
-        self.game_time_to_win = 1000 * 120           
+        self.game_time_to_win = 1000 * 120       
+        self.level_timer_start_time = 0
+
         self.score = 0                               # in-game score count
         self.level = 1                               # in-game level
         self.health_percentage = 100                 # in-game health bar
@@ -166,6 +170,9 @@ class Bee:
             # this is what we want to maintain 
             time_ran =  current_time - self.recharge_start_time
             self.temp_time_ran_for_pause = time_ran
+
+        time_ran = current_time - self.level_timer_start_time
+        self.temp_game_time_ran_for_pause = time_ran
              
         
     # continuously called to handle pausing (to maintain angry or countdown modes)
@@ -177,6 +184,8 @@ class Bee:
         # if recharging, update the recharge start time to maintain the time ran 
         elif self.is_recharging:
             self.recharge_start_time = current_time - self.temp_time_ran_for_pause
+        # always maintain the overall level timer 
+        self.level_timer_start_time = current_time - self.temp_game_time_ran_for_pause
 
 
     # Update bee's walk_direction and walk_vector based on walk_angle changed by key input
@@ -286,6 +295,15 @@ class Bee:
         self.pupil_position[0] += (self.pupil_target[0] - self.pupil_position[0]) * self.pupil_speed
         self.pupil_position[1] += (self.pupil_target[1] - self.pupil_position[1]) * self.pupil_speed
     
+    # only called when the level starts 
+    def start_level_timer(self):
+        self.level_timer_start_time = pygame.time.get_ticks() 
+        print(f"--Started Level Timer")
+
+    def handle_level_timer(self):
+        current_time = pygame.time.get_ticks() 
+        self.game_time_to_win = self.initial_game_timer - (current_time - self.level_timer_start_time)
+
     # only called when we start angry mode
     def activate_angry_mode(self):
         # if paused, don't do anything
