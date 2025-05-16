@@ -386,6 +386,19 @@ class UI:
         self.draw_rectangle(bottomLeft_x=0, bottomLeft_y=0, 
                             topRight_x=self.win_width, topRight_y=self.win_height, 
                             color=(0, 0, 0))
+    
+    # draw the screen that will show if something goes wrong 
+    def uh_oh_screen(self):
+        self.draw_text(f"Uh Oh!! Something went really wrong!!", self.win_width // 2 - 150, self.win_height // 2)
+        self.draw_text(f"Press ESC to quit.", self.win_width // 2 - 75, self.win_height // 2 - 25)
+        # draw banner rectangle 
+        self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y=self.win_height // 2 - 40, 
+                            topRight_x=810, topRight_y=self.win_height // 2 + 30, 
+                            color=(153/255, 0, 0))
+        # draw rectangle as the background of the menu - black 
+        self.draw_rectangle(bottomLeft_x=0, bottomLeft_y=0, 
+                            topRight_x=self.win_width, topRight_y=self.win_height, 
+                            color=(0, 0, 0))
 
     # check if a button was clicked. returns name of button or None 
     def check_if_button_clicked(self, mouse_x, mouse_y, mode, help):
