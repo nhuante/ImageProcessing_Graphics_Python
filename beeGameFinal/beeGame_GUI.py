@@ -377,15 +377,15 @@ class UI:
         
     # draw the loading screen 
     def draw_loading_screen(self, dots:str):
-        self.draw_text(f"Loading{dots}", self.win_width // 2 - 30, self.win_height // 2)
+        self.draw_text(f"Loading{dots}", self.win_width // 2 - 120, self.win_height // 2)
         # draw banner rectangle 
         self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y=self.win_height // 2 - 20, 
                             topRight_x=810, topRight_y=self.win_height // 2 + 30, 
                             color=(153/255, 0, 0))
-        # draw rectangle as the background of the menu - black 
-        self.draw_rectangle(bottomLeft_x=0, bottomLeft_y=0, 
-                            topRight_x=self.win_width, topRight_y=self.win_height, 
-                            color=(0, 0, 0))
+        # # draw rectangle as the background of the menu - black 
+        # self.draw_rectangle(bottomLeft_x=0, bottomLeft_y=0, 
+        #                     topRight_x=self.win_width, topRight_y=self.win_height, 
+        #                     color=(0, 0, 0))
     
     # draw the screen that will show if something goes wrong 
     def uh_oh_screen(self):
@@ -461,8 +461,8 @@ class UI:
                             '''    [Shift/Ctrl]..........Move the Bee up/down, fly higher or lower''', 
                             '''    [Z]......................Activate Attack Mode (lasts 5 seconds)(takes 10 sec to recharge) ''',
                             '''    [P or Esc]...........Pause/UnPause ''',
-                            '''    [E]......................Pick up pollen particle  [coming soon]''',
-                            '''    [Q]......................Drop off pollen particle [coming soon] ''',
+                            '''    [X]......................Pick up pollen particle  ''',
+                            '''    [C]......................Drop off pollen particle ''',
                         ] 
         top_offset = 100 + (len(intro_lines) * 25)
         for line in controls_lines:
