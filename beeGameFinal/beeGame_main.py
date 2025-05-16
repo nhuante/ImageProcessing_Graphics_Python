@@ -246,13 +246,13 @@ def main():
     garden_z_boundaries = (-100, 100)
 
     # loading screen 
-    loading_game = False 
+    loading_game = True 
     loading_game_time = (2 * 1000)
     loading_game_start_time = pygame.time.get_ticks()
     # num_dots = 1
 
     # developer vars 
-    show_bounding_boxes = True
+    show_bounding_boxes = False
     developer_mode = False
 
     # error handling in case the game crashes 
