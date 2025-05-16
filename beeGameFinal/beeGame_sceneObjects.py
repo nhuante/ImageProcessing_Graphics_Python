@@ -31,7 +31,7 @@ class Prop:
         self.bv_type = bv_type
 
     # draws the prop 
-    def draw(self, show_bounding_box:bool):
+    def draw(self, show_bounding_box:bool=False):
         if show_bounding_box:
                 mins, maxs, center, _ = self.obj.cal_minMax()
                 draw_AABB(mins, maxs, center)

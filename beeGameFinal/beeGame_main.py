@@ -117,9 +117,9 @@ def main():
     # initialize all the props 
     props = []
     # flower_positions = []
-    # grass
-    # for grass in create_grass_objects():
-    #     props.append(grass)
+    grass_objects = []
+    for grass in create_grass_objects(150):
+        grass_objects.append(grass)
 
     # beehive 
     beehive = create_beehive()
@@ -552,6 +552,8 @@ def main():
                 for prop in (props + flowers):
                     prop.draw(show_bounding_box=show_bounding_boxes)
                     # curr_position = prop.t.translation
+                for grass in grass_objects:
+                    grass.draw()
                     
 
                 
