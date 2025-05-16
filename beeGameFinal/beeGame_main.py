@@ -299,6 +299,8 @@ def main():
                     elif event.key == pygame.K_e:               # start zooming out
                         key_e_on = True
                     # DEVELOPER BUTTONS -----------------------------------------------------
+                    elif event.key == pygame.K_0:
+                        camera.reset_views()
                     elif event.key == pygame.K_1:                       # decrease swing speed for animation
                         playerBee.anim_speed -= 0.5
                         print("Swing Speed:", playerBee.anim_speed)    
@@ -360,7 +362,7 @@ def main():
                                 # drop off and start falling 
                                 pollen.falling = True 
                                 pollen.carried = False 
-                                
+
                             # pollen.carried = False 
                             playerBee.carrying_pollen = None 
                             playerBee.leg_carrying_pollen = False
@@ -459,22 +461,24 @@ def main():
                     # if playerBee.angry_bee_mode == False:
                         # angry_mode_activated = False
 
-            
+                # camera.tilt_angle_horizontal, camera.tilt_angle_vertical = 0.0, 0.0
                 # update camera parameters 
                 if key_a_on:
-                    camera.tilt_angle_horizontal += 1
+                    camera.tilt_angle_horizontal += 2
                 elif key_d_on:
-                    camera.tilt_angle_horizontal -= 1
+                    camera.tilt_angle_horizontal -= 2
                 elif key_w_on:
                     # if camera located at negative z position, looking up is negative rotation about X
-                    if camera.eye_pos[2] < 0: camera.tilt_angle_vertical -= 1
+                    # if camera.eye_pos[2] < 0: camera.tilt_angle_vertical -= 1
                     # if camera located at positive z position, looking up is positive rotation about X
-                    else: camera.tilt_angle_vertical += 1
+                    # else: camera.tilt_angle_vertical += 1
+                    camera.tilt_angle_vertical -= 2
                 elif key_s_on:
                     # if camera located at negative z position, looking down is negative rotation about X
-                    if camera.eye_pos[2] < 0: camera.tilt_angle_vertical += 1
+                    # if camera.eye_pos[2] < 0: camera.tilt_angle_vertical += 1
                     # if camera located at positive z position, looking down is positive rotation about X
-                    else: camera.tilt_angle_vertical -= 1
+                    # else: camera.tilt_angle_vertical -= 1
+                    camera.tilt_angle_vertical += 2
                 # update camera zooming 
                 if key_q_on:
                     camera.zoom_distance += 0.5 # had to change to 0.5 otherwise get a black screen when actively zooming in 

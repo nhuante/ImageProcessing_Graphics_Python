@@ -25,7 +25,7 @@ from beeGame_sceneObjects import read_object_positions_file, create_objects_and_
 #      Construct a 3x3 rotation matrix (no need Homogeneous) and multiply it with the input vector
 #      rot_axis: "X", "Y", or "Z"
 #      Return the rotated vector.
-def rotate_vector(vector, angle_degrees, rot_axis = "Y"):
+def rotate_vector(vector, angle_degrees, rot_axis = "Y", custom_axis:tuple=()):
     rotated_vector = np.array([0.0, 0.0, 0.0])
     
     # convert angle degrees to radians
@@ -53,6 +53,11 @@ def rotate_vector(vector, angle_degrees, rot_axis = "Y"):
 
     # rotate the input vector by multiplying with the matrix using np.dot()
     rotated_vector = np.dot(rot_matrix, vector)
+
+    if rot_axis == "CUSTOM" and custom_axis != tuple():
+        rotated_vector = (vector * cosine_theta + \
+                      np.cross(custom_axis, vector) * sin_theta + \
+                      custom_axis * (custom_axis.dot(vector)) * (1 - cosine_theta))
 
     return rotated_vector
 
@@ -965,6 +970,10 @@ class Pollen:
 
         self.falling_difference = 0
 
+    def reset_pollen(self):
+        self.carried = False 
+        self.falling = False 
+        self.falling_difference = 0 
 
     def draw_pollen(self, draw_bounding_boxes:bool, bee:Bee):
         if draw_bounding_boxes:
@@ -1156,12 +1165,14 @@ class Moth:
                 else: dx = -1
             potent_x_pos = self.current_x_pos + (dx * self.move_speed)
             # get the potential next bounding box 
-            minc = (potent_x_pos - distance,
-                    self.current_y_pos - distance,
-                    self.current_z_pos - distance)
-            maxc = (potent_x_pos + distance,
-                    self.current_y_pos + distance,
-                    self.current_z_pos + distance)
+            distance_for_prop_collision = 1
+            minc = (potent_x_pos - distance_for_prop_collision,
+                    self.current_y_pos - distance_for_prop_collision,
+                    self.current_z_pos - distance_for_prop_collision)
+            maxc = (potent_x_pos + distance_for_prop_collision,
+                    self.current_y_pos + distance_for_prop_collision,
+                    self.current_z_pos + distance_for_prop_collision)
+            draw_AABB(minc, maxc, center=current_pos, blueColor=True)
             # check against each prop 
             blocked = False 
             for prop in obstacles:
@@ -1352,15 +1363,6 @@ class Moth:
 
 
 
-
-
-
-
-
-
-
-
-
 class Camera:
     def __init__(self, view_mode = "corner1"):
         self.view_mode = view_mode
@@ -1392,22 +1394,22 @@ class Camera:
         
         # corner1 view
         if self.view_mode == "corner1":
-            self.eye_pos = np.array([0.0, 50.0, 100.0]) 
+            self.eye_pos = np.array([-50.0, 50.0, 150.0]) 
             self.look_at = np.array([100.0, 10.0, 0.0])
             self.view_up = np.array([0.0, 1.0, 0.0])
         # corner2 view
         elif self.view_mode == "corner2":
-            self.eye_pos = np.array([200.0, 50.0, 100.0]) 
+            self.eye_pos = np.array([250.0, 50.0, 150.0]) 
             self.look_at = np.array([100.0, 10.0, 0.0])
             self.view_up = np.array([0.0, 1.0, 0.0])
         # corner3 view
         elif self.view_mode == "corner3":
-            self.eye_pos = np.array([200.0, 50.0, -100.0]) 
+            self.eye_pos = np.array([250.0, 50.0, -150.0]) 
             self.look_at = np.array([100.0, 10.0, 0.0])
             self.view_up = np.array([0.0, 1.0, 0.0])
         # corner4 view
         elif self.view_mode == "corner4":
-            self.eye_pos = np.array([0.0, 50.0, -100.0]) 
+            self.eye_pos = np.array([-50.0, 50.0, -150.0]) 
             self.look_at = np.array([100.0, 10.0, 0.0])
             self.view_up = np.array([0.0, 1.0, 0.0])
         # follow view 
@@ -1463,27 +1465,28 @@ class Camera:
             # calculate the current gaze vector
             base_gaze = self.look_at - self.eye_pos
 
-            # temp for title angle vertical 
-            new_title_angle_vertical = self.tilt_angle_vertical
+            # # temp for title angle vertical 
+            # new_title_angle_vertical = self.tilt_angle_vertical
 
             # axis to rotate on for vertical movements 
-            vert_tilt_axis = "X"
-            # if in side view, change the rotation axis and negate the degrees
-            if self.view_mode == "side":
-                vert_tilt_axis = "Z"
-                new_title_angle_vertical = self.tilt_angle_vertical * -1
-        
+            # vert_tilt_axis = "X"
+            camera_right_axis = np.cross(self.view_up, base_gaze)
+            camera_right_axis /= np.linalg.norm(camera_right_axis)
             # tilt vertically
-            rotated_gaze = rotate_vector(base_gaze, new_title_angle_vertical, vert_tilt_axis)
+            gaze_after_pitch = rotate_vector(vector=base_gaze, angle_degrees=self.tilt_angle_vertical, 
+                                             rot_axis="CUSTOM", custom_axis=camera_right_axis)
 
             # tilt horizontally
-            rotated_gaze = rotate_vector(rotated_gaze, self.tilt_angle_horizontal, "Y")
-
-            new_lookat = self.eye_pos + rotated_gaze 
-
+            final_gaze = rotate_vector(vector=gaze_after_pitch, angle_degrees=self.tilt_angle_horizontal, 
+                                             rot_axis="CUSTOM", custom_axis=self.view_up)
+            # new_lookat = self.look_at
+            # new_lookat[0] = self.look_at[0] + self.tilt_angle_horizontal
+            # new_lookat[1] = self.look_at[1] + self.tilt_angle_vertical
+            new_lookat = self.eye_pos + final_gaze
             ## calculate new eye position by moving the camera along the gaze vector by zoom_distance
             # calculate the unit vector of the current gaze vector
-            unit_rotated_gaze = rotated_gaze / np.linalg.norm(rotated_gaze)
+            # unit_rotated_gaze = rotated_gaze / np.linalg.norm(rotated_gaze)
+            unit_rotated_gaze = final_gaze / np.linalg.norm(final_gaze)
 
             # calculate the new eye_position
             new_eye_pos = self.eye_pos + unit_rotated_gaze * self.zoom_distance

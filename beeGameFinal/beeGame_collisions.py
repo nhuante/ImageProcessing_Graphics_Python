@@ -194,7 +194,7 @@ def draw_boundingSphere(center, radius):
     glEnable(GL_LIGHTING)
     glPopAttrib()
 
-def draw_AABB(min_coords, max_coords, center, bcollide=False):
+def draw_AABB(min_coords, max_coords, center, blueColor=False):
     # Calculate size of the box along each axis
     size_x = max_coords[0] - min_coords[0]
     size_y = max_coords[1] - min_coords[1]
@@ -205,7 +205,7 @@ def draw_AABB(min_coords, max_coords, center, bcollide=False):
     glDisable(GL_LIGHTING)
 
     glColor3f(1.0, 1.0, 1.0)
-    if bCollide == True:
+    if blueColor == True:
         glColor3f(0.25, 0.88, 0.82)
     glLineWidth(1.0)
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
