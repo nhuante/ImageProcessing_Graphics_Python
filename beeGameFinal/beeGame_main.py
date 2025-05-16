@@ -73,14 +73,14 @@ def set_3d_projection():
 def generate_flowers_pollen(force_regnerate:bool):
     # flowers 
     flowers, flower_positions = create_flowers(num_flowers=6, force_regenerate=force_regnerate) 
-
+    scalings = (1, 2.5)
     # pollen particles 
     pollen_particles = []
     for n in range(len(flower_positions)):
-        if n > (len(flower_positions)//2) - 1: 
-            pollen_height = flower_positions[n][1] + (70 * 3.5) + 12
+        if n <= (len(flower_positions)//2) - 1: 
+            pollen_height = flower_positions[n][1] + (70 * scalings[0]) + 12
         else: 
-            pollen_height = flower_positions[n][1] + (70 * 2) + 12
+            pollen_height = flower_positions[n][1] + (70 * scalings[1]) + 12
         pollen_particles.append(Pollen( radius=2, color=(215/255, 215/255, 25/255), pollen_id=n+1, 
                                         initial_x=flower_positions[n][0],                 # x_pos 
                                         initial_y=pollen_height ,  # y_pos

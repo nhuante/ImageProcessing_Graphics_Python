@@ -429,7 +429,12 @@ class Bee:
             glTranslatef(-0.8, -3, -1.2 + i * 1.2)  # find the correct position for the leg 
             
             glTranslate(0, 2.2, 0)
-            if not self.actively_moving: 
+            if self.carrying_pollen:
+                carry_angle = 8 
+                glRotatef(carry_angle, 0, 0, 1)
+                if i == 0: glRotatef(-carry_angle, 1, 0, 0)
+                elif i == 2: glRotatef(carry_angle, 1, 0, 0)
+            elif not self.actively_moving: 
                 glRotatef(self.leg_angle * direction, 1, 0, 0)      # animate left legs
             else: 
                 drag_factor = 8.5  # Adjust to control how much the legs drag
@@ -452,7 +457,12 @@ class Bee:
             glTranslatef(0.8, -3, -1.2 + i * 1.2)   # find the correct position for the leg 
             
             glTranslate(0, 2.2, 0)
-            if not self.actively_moving: 
+            if self.carrying_pollen:
+                carry_angle = -8 
+                glRotatef(carry_angle, 0, 0, 1)
+                if i == 0: glRotatef(carry_angle, 1, 0, 0)
+                elif i == 2: glRotatef(-carry_angle, 1, 0, 0)
+            elif not self.actively_moving: 
                 glRotatef(-self.leg_angle * direction, 1, 0, 0)      # animate right legs
             else: 
                 # if self.walk_vector[2] == 0 or self.walk_vector[2] == 180:
@@ -845,7 +855,7 @@ class Flower:
 
 
 def create_flowers(num_flowers:int, force_regenerate:bool):
-    scalings = [(2, 2, 2), (3.5, 3.5, 3.5)]
+    scalings = [(1, 1, 1), (2.5, 2.5, 2.5)]
     height = -12
     rotation = (0, 1, 0, 0)
     bv_type = "AABB"
@@ -996,7 +1006,7 @@ class Pollen:
             self.falling_difference = 0
             # offset from the bee's current position 
             self.x_pos = bee.walk_vector[0]
-            self.y_pos = bee.walk_vector[1] + bee.height_offset - 5
+            self.y_pos = bee.walk_vector[1] + bee.height_offset - 5.5
             self.z_pos = bee.walk_vector[2]
         elif self.falling:
             self.falling_difference -= .1

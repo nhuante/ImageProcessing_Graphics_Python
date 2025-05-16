@@ -55,3 +55,9 @@ pip install numpy pygame PyOpenGL
 * [Type Casting for Funciton Parameters](https://stackoverflow.com/questions/2489669/how-do-python-functions-handle-the-types-of-parameters-that-you-pass-in)
 * [GLUT Bitmap Fonts](https://www.opengl.org/resources/libraries/glut/spec3/node76.html)
 * [GLUT Solid Sphere Function](https://www.opengl.org/resources/libraries/glut/spec3/node81.html)
+* [3d Graphing Tool to Visualize Paths](https://www.desmos.com/3d)
+* [3d Visualisation of All Moth Paths](https://www.desmos.com/3d/fb2pxzfkns)
+* [RGB 0-1 Color Picker](https://rgbcolorpicker.com/0-1)
+* [Photoshop Express Adobe Desktop Version](https://new.express.adobe.com)
+* [Rendering Images in PyGame and OpenGL](https://www.reddit.com/r/pygame/comments/17ob2qc/texturing_in_pyopengl_and_pygame/)
+* 

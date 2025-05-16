@@ -193,7 +193,7 @@ def create_grass_objects(num_grass_chunks:int):
 
 # draws all of the flower objects 
 def create_flower_objects(num_flowers:int):
-    scalings = [(1, 1, 1), (0.5, 0.5, 0.5)]
+    scalings = [(0.25, 0.25, 0.25), (0.5, 0.5, 0.5)]
     height = -10
     rotation = (-90.0, 1, 0, 0)
     bv_type = "AABB"
