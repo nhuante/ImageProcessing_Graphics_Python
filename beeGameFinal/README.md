@@ -51,7 +51,7 @@ You can also find all required installs in the `requirements.txt` file.
 
   * **Windows**
     * download the `TheBeeGame-Windows.zip`, unzip the folder, and double-click the .exe file 
-  * **Mac'Linux** *Coming Soon*
+  * **Mac/Linux** *Coming Soon*
     * download the `TheBeeGame-Macos.zip`, unzip the folder, and double-click the .app file 
 
 2. **OR Download the most-recent verson from [Itch.io]()**  
