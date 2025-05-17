@@ -136,7 +136,7 @@ Use the below chart to navigate game controls.
 | 7   | Toggle showing AABB colliders                    |
 | 8   | Regenerate flower positions                      |
 | 9   | Crash the game (throws an error to test “Uh-Oh”) |
-
+| u   | Place the bee in front of corner camera 1 for better visualization when presenting or debugging bee mechanics |
 
 ---
 
