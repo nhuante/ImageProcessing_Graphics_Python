@@ -346,6 +346,9 @@ def main():
                                 game_mode = "Level 1"       # update game mode 
                                 playerBee.start_level_timer()
                                 playerBee.reset_bee_switching_rooms()
+                                for pollen in pollen_particles:
+                                    pollen.falling = False 
+                                    pollen.carried = False
                             elif button_clicked == "difficulty":
                                 if ui.difficulty_button.label == "Normal":
                                     ui.difficulty_button.label = "Hard"

@@ -1236,7 +1236,8 @@ class Moth:
             maxc = (potent_x_pos + distance_for_prop_collision,
                     self.current_y_pos + distance_for_prop_collision,
                     self.current_z_pos + distance_for_prop_collision)
-            draw_AABB(minc, maxc, center=current_pos, blueColor=True)
+            if draw_bounding_boxes:
+                draw_AABB(minc, maxc, center=current_pos, blueColor=True)
             # check against each prop 
             blocked = False 
             for prop in obstacles:
