@@ -160,6 +160,11 @@ class Bee:
         self.walk_angle = 0.0 
         self.walk_vector = np.array([100.0, 10.0, 0.0])
     
+    # resets the bee to be placed at it's spawn point and movement parameters to their starting values
+    def move_to_camera1(self):
+        self.walk_direction = np.array([0.0, 0.0, 1.0])
+        self.walk_angle = 0.0 
+        self.walk_vector = np.array([10.0, 45.0, 90.0])
 
     # activate pause mode 
     def start_pause(self):
@@ -245,6 +250,10 @@ class Bee:
             # if not blocked by any prop, allow movement to the desired x position 
             if not blocked:
                 self.walk_vector[i] = potent_new_walk_vector[i]
+                if reverse:
+                    self.in_reverse = True
+                else:
+                    self.in_reverse = False
         return True
 
 
@@ -476,11 +485,8 @@ class Bee:
                 drag_factor = 8.5  # Adjust to control how much the legs drag
                 leg_drag_angle = max(min(10 + (self.walk_vector[0] * drag_factor), 25), -25)
                 if self.in_reverse: 
+                    # print("reverse")
                     leg_drag_angle *= -1
-                    if self.walk_vector[0] <= 0:
-                        leg_drag_angle *= -1
-                elif self.walk_vector[0] <= 0: 
-                    leg_drag_angle *= -1 # if in negative x-axis territory, reverse the angle 
                 glRotatef(leg_drag_angle, 1, 0, 0)      # animate left legs
             glTranslate(0, -2.2, 0)
 

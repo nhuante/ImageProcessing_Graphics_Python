@@ -430,7 +430,7 @@ def main():
                             elif event.key == pygame.K_e:               # start zooming out
                                 key_e_on = True
                             elif event.key == pygame.K_0:               # reset camera view
-                                    camera.reset_views()
+                                camera.reset_views()
                             # DEVELOPER MODE TOGGLE -----------------------------------------------------
                             elif event.key == pygame.K_DELETE:          # toggle developer mode 
                                 developer_mode = not developer_mode
@@ -505,6 +505,8 @@ def main():
                                     flowers, flower_positions, pollen_particles = generate_flowers_pollen(force_regnerate=True) 
                                 elif event.key == pygame.K_9:
                                     raise ValueError("testing the uh oh screen")
+                                elif event.key == pygame.K_u:
+                                    playerBee.move_to_camera1()
 
                         
                     # check for keyboard input - key up
