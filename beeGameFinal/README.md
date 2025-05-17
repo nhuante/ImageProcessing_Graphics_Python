@@ -1,5 +1,7 @@
 # The Bee Game
-** An OpenGL + Pygame "Race-Against-the-Clock" Game**
+
+**An OpenGL + Pygame "Race-Against-the-Clock" Game**
+
 Spring 2025 • Natalie Huante • CPSC 515: Advanced Computer Graphics
 
 **Quick Links**
