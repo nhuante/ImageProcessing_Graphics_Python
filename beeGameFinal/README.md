@@ -56,7 +56,7 @@ You can also find all required installs in the `requirements.txt` file.
 
 2. **Create & Activate a Virtual Environment** 
 
-This is *entirely* necessary, but it is best practice to do so to avoid 
+This is not *entirely* necessary, but it is best practice to do so to avoid 
 * Polluting your system Python, which might lead to version conflicts later if you start another project that needs a different version of, say, `pygame` or `numpy`
 
     ```bash
@@ -72,9 +72,10 @@ Make sure you have `pip >= 20.3` then:
     ```
 
 4. **Run the Game**
+*(Make sure you are in the root directory of the repo)*
 
     ```bash
-        python beeGame_main.py
+        python ./beeGameFinal/beeGame_main.py
     ```
 
 

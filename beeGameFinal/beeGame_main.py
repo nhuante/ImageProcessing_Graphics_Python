@@ -5,6 +5,7 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import threading 
 import random 
+import sys, os
 
 from beeGame_sceneObjects import Prop, read_write_grass_objects, create_beehive
 from beeGame_model import Bee, Camera, Pollen, Moth, Flower, create_flowers
@@ -12,6 +13,23 @@ from beeGame_GUI import UI
 from beeGame_collisions import collisionTest_AABBs, draw_AABB
 
 width, height = 800, 600                                                    # width and height of the screen created
+
+# used to determine whether to access the resource files from the local file structure 
+# or from the pyInstaller's temp folder
+def resource_path(rel_path: str) -> str:
+    """
+    Get the absolute path to a bundled resource, works for dev and PyInstaller.
+    """
+    if getattr(sys, 'frozen', False):
+        # PyInstaller bundles files into sys._MEIPASS
+        base = sys._MEIPASS
+        final_path = os.path.join(base, rel_path)
+    else:
+        # running in normal Python, resources live next to this script
+        # base = os.path.dirname(os.path.abspath(__file__))
+        final_path = rel_path
+    return final_path
+
 
 # drawing x, y, z axis in world space
 def drawAxes():                                                             # draw x-axis and y-axis
@@ -194,7 +212,7 @@ def main():
         # generate it in the world 
         object_variation_index = random.randint(0, len(obj_files) - 1)
         object_file_name = obj_files[object_variation_index]
-        grass_objects_as_props.append(Prop(f"./resources/models/{object_file_name}", 
+        grass_objects_as_props.append(Prop(resource_path(f"./resources/models/{object_file_name}"), 
                                 translation=(   grass_position[0],
                                                 grass_position[1], 
                                                 grass_position[2]), 

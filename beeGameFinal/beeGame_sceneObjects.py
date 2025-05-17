@@ -2,6 +2,8 @@ from OpenGL.GL import *
 from beeGame_OBJFileLoader import OBJ       
 from beeGame_collisions import Transform, apply_transform_to_mesh, draw_AABB
 import random 
+import os, sys
+# from beeGame_main import resource_path
 
 '''
     THESE ARE OBJECTS THAT ARE IMPORTED FROM OBJ FILES AND MIGHT REQURE ACCESSING CACHED POSITIONS
@@ -12,6 +14,26 @@ import random
         - BEEHIVE
         - 
 '''
+
+
+# used to determine whether to access the resource files from the local file structure 
+# or from the pyInstaller's temp folder
+def resource_path(rel_path: str) -> str:
+    """
+    Get the absolute path to a bundled resource, works for dev and PyInstaller.
+    """
+    if getattr(sys, 'frozen', False):
+        # PyInstaller bundles files into sys._MEIPASS
+        base = sys._MEIPASS
+        final_path = os.path.join(base, rel_path)
+    else:
+        # running in normal Python, resources live next to this script
+        # base = os.path.dirname(os.path.abspath(__file__))
+        final_path = rel_path
+    return final_path
+
+
+
 # used for obj objects that are loaded in
 class Prop:
     # load the OBJ, apply the initial transformations, remember the bv type 
@@ -56,7 +78,7 @@ def read_object_positions_file(pathOfFile:str, ):
 
     try:
         # try to open the file 
-        positions_file = open(pathOfFile, "r")
+        positions_file = open(resource_path(pathOfFile), "r")
         # read all the lines 
         positions_from_file = positions_file.readlines()
         # if empty file or the first line is empty space: close it and later we overwrite it
@@ -107,7 +129,7 @@ def create_objects_and_writeif(need_to_create_file:bool, positions_formatted:lis
 
     # if needed, generate random nums and write them to the file for next time                                                    
     if need_to_create_file: 
-        object_positions_file = open(path_of_file_to_write, "w")
+        object_positions_file = open(resource_path(path_of_file_to_write), "w")
         for _ in range(num_positions):
             # generate a random position on the xz-plane
             random_x_pos = random.random() * x_max
@@ -205,7 +227,7 @@ def create_beehive(scaling:tuple, pos_x:float, height:float, pos_z:float):
     rotation = (-90.0, 1, 0, 0)
     bv_type = "AABB"
 
-    beehive = Prop(f"./resources/models/beehive.obj", 
+    beehive = Prop(resource_path(f"./resources/models/beehive.obj"), 
                     translation=( pos_x,
                                   height, 
                                   pos_z), 

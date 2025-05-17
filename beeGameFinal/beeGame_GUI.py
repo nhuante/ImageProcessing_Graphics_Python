@@ -5,9 +5,26 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18   
 from beeGame_model import Bee
+import os, sys
+# from beeGame_main import resource_path
 
 ''' this file handles all ui elements '''
 
+# used to determine whether to access the resource files from the local file structure 
+# or from the pyInstaller's temp folder
+def resource_path(rel_path: str) -> str:
+    """
+    Get the absolute path to a bundled resource, works for dev and PyInstaller.
+    """
+    if getattr(sys, 'frozen', False):
+        # PyInstaller bundles files into sys._MEIPASS
+        base = sys._MEIPASS
+        final_path = os.path.join(base, rel_path)
+    else:
+        # running in normal Python, resources live next to this script
+        # base = os.path.dirname(os.path.abspath(__file__))
+        final_path = rel_path
+    return final_path
 
 # button obv 
 class Button:
@@ -92,7 +109,11 @@ class UI:
                                     ("hurt",    "./resources/imgs/hurt_bee.png"), 
                                     ("dead",    "./resources/imgs/dead_bee.png"), 
                                     ("won",    "./resources/imgs/winner_bee_2.png")  ]: 
-            surf = pygame.image.load(file_name).convert_alpha()
+            surf = pygame.image.load(resource_path(file_name)).convert_alpha()
+            # img_file = resource_path(file_name)
+            # surf = pygame.image.load(img_file).convert_alpha()
+
+
             icon_h = 42
             icon_w = int(icon_h * surf.get_width() / surf.get_height())
 

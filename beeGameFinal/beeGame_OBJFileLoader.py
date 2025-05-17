@@ -1,11 +1,33 @@
-import os, pygame
+import os, pygame, sys
 from OpenGL.GL import *
 
 '''this file handles obj file loading (i.e. loading in a model from an obj file)'''
 
+# used to determine whether to access the resource files from the local file structure 
+# or from the pyInstaller's temp folder
+def resource_path(rel_path: str) -> str:
+    """
+    Get the absolute path to a bundled resource, works for dev and PyInstaller.
+    """
+    if getattr(sys, 'frozen', False):
+        # PyInstaller bundles files into sys._MEIPASS
+        base = sys._MEIPASS
+        final_path = os.path.join(base, rel_path)
+    else:
+        # running in normal Python, resources live next to this script
+        # base = os.path.dirname(os.path.abspath(__file__))
+        final_path = rel_path
+    return final_path
+
+
+
 # loads in a .mtl file as a texture 
 def load_texture(image_path):
-    surf = pygame.image.load(image_path)
+    # surf = pygame.image.load(image_path)
+    img_file = resource_path(image_path)
+    surf = pygame.image.load(img_file)
+
+
     image = pygame.image.tobytes(surf, 'RGBA', 1)
     width, height = surf.get_rect().size
     texid = glGenTextures(1)
@@ -36,7 +58,7 @@ def MTL(filename):
         elif key in texture_keys:
             tex_filename = ' '.join(values[1:]).replace('\\', '/')
             mtl[key] = tex_filename  # store the path
-            tex_path = os.path.join("./resources/models/", tex_filename)
+            tex_path = os.path.join(resource_path("./resources/models/"), tex_filename)
             try:
                 mtl[f'texture_{key}'] = load_texture(tex_path)
             except pygame.error as e:
@@ -82,7 +104,7 @@ class OBJ:
             elif values[0] in ('usemtl', 'usemat'):
                 material = values[1]
             elif values[0] == 'mtllib':
-                mtl_path = os.path.join("./resources/models/", values[1])
+                mtl_path = os.path.join(resource_path("./resources/models/"), values[1])
                 self.mtl = MTL(mtl_path)
             elif values[0] == 'f':
                 face = []
