@@ -45,7 +45,21 @@ You can also find all required installs in the `requirements.txt` file.
 ---
 
 
-## How to Run Locally
+## How to Run Locally (By Downloadable Executable/App)
+
+1. **Download the .exe or .app release in the `releases` folder without downloading or installing any dependencies**  
+
+  * **Windows**
+    * download the `TheBeeGame.zip`, unzip the folder, and double-click the .exe file 
+  * **Mac'Linux**
+    * download the `TheBeeGame-Macos.zip`, unzip the folder, and double-click the .app file 
+
+2. **OR Download the most-recent verson from [Itch.io]()**  
+
+---
+
+
+## How to Run Locally (By Cloning the Repo)
 
 1. **Clone the repo**  
 
