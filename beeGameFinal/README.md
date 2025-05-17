@@ -5,6 +5,7 @@
 Spring 2025 • Natalie Huante • CPSC 515: Advanced Computer Graphics
 
 **Quick Links**
+
 * [Play The Bee Game Here]()
 * [The Bee Game Presentation](https://www.canva.com/design/DAGnmDYIDQo/C7kUFL_jMfZ9g7deil8AjA/edit?utm_content=DAGnmDYIDQo&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 * [3d Visualisation of All Moth Paths](https://www.desmos.com/3d/fb2pxzfkns)
@@ -13,11 +14,13 @@ Spring 2025 • Natalie Huante • CPSC 515: Advanced Computer Graphics
 ---
 
 ## Motivation  
+
 I’m taking an advanced computer graphics course and wanted to explore Pygame + OpenGL by building a project that ties together everything we’ve learned this semester including geometric transforms, scene graphs, dynamic cameras, collision detection using AABB, custom OBJ loading, multithreaded loading screens, and more.
 
 ---
 
 ## Environment  
+
 This project was developed and tested in the course Conda environment. I activate it locally by running the following command:  
 ```bash
 conda activate cpsc515
@@ -45,26 +48,31 @@ You can also find all required installs in the `requirements.txt` file.
 ## How to Run Locally
 
 1. **Clone the repo**  
+
    ```bash
    git clone https://github.com/nhuante/ImageProcessing_Graphics_Python.git
    cd beeGameFinal
    ```
 
 2. **Create & Activate a Virtual Environment** 
+
 This is *entirely* necessary, but it is best practice to do so to avoid 
 * Polluting your system Python, which might lead to version conflicts later if you start another project that needs a different version of, say, `pygame` or `numpy`
+
     ```bash
         python3 -m venv .venv       # or `python -m venv .venv` on Windows
         source .venv/bin/activate   # or `.venv\Scripts\activate`
     ```
 
 3. **Install Dependencies**
+
 Make sure you have `pip >= 20.3` then:
     ```bash
         pip install -r requirements.txt
     ```
 
 4. **Run the Game**
+
     ```bash
         python beeGame_main.py
     ```
@@ -74,14 +82,16 @@ Make sure you have `pip >= 20.3` then:
 
 ## Game Concept and Objective 
 
-You play as a friendly, hard-working bee who must collect pollen and return it to the hive before time runs out. There are two "rooms" in the game:
+You play as a friendly, hard-working bee who must collect pollen and return it to the hive before time runs out. 
 
-* Lobby: Practice controls and read the help screen.
-* Level 1: You have 120 seconds to
+There are two "rooms" in the game you will enocunter:
+
+* **Lobby**: Practice controls and read the help screen.
+* **Level 1**: You have 120 seconds to
     * Collect pollen from flowers
     * Avoid or attack moth enemies (+points if you’re “angry,” –health if you’re not)
     * Deliver pollen to the beehive (+20 points per drop-off)
-* Win/Lose: Reach 100 points to win; health ≤ 0 → loss.
+* **Win/Lose**: Reach 100 points to win; health ≤ 0 → loss.
 
 
 --- 
@@ -94,20 +104,16 @@ Use the below chart to navigate game controls.
 | **Movement**              |                                                  |                    |
 | `←` / `→` / `↑` / `↓`     | Turn & fly forward/back/left, right              |      ✔️            |
 | `Left Shift` / `Left Ctrl`| Ascend / Descend                                 |      ✔️            |
-|                           |                                                  |                    |
 | **Camera**                |                                                  |                    |
 | `W`/`A`/`S`/`D`           | Pan camera up/left/down/right                    |      ✔️            |
 | `Q`/`E`                   | Zoom in / out                                    |      ✔️            |
-|                           |                                                  |                    |
 | **View Modes**            |                                                  |                    |
 | `Space`                   | Cycle: Third-person → First-person → …           |      ❌            |
 | `0`                       | Reset camera in current view mode                |      ❌            |
-|                           |                                                  |                    |
 | **Game**                  |                                                  |                    |
 | `P`                       | Pause / Unpause                                  |      ❌            |
 | `Z`                       | Activate “Angry” speed burst (once per recharge) |      ❌            |
 | `X`/`C`                   | Pick up / Drop off pollen particle               |      ❌            |
-|                           |                                                  |                    |
 | **UI Interaction**        |                                                  |                    |
 | `Mouse`                   | Click GUI Buttons                                |      ❌            |
 
