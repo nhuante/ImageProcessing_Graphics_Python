@@ -43,7 +43,7 @@ jobs:
 
       # 5. Upload the resulting .app as an artifact
       - name: Upload macOS artifact
-        uses: actions/upload-artifact@v3.2.1
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: BeeGame-macos
           path: dist/beeGame_main.app
