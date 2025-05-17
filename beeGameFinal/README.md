@@ -1,51 +1,174 @@
-# The Bee Game: Advanced Computer Graphics (Final Project)
+# The Bee Game
+** An OpenGL + Pygame "Race-Against-the-Clock" Game**
+Spring 2025 • Natalie Huante • CPSC 515: Advanced Computer Graphics
 
-Project description here
----
+**Quick Links**
+* [Play The Bee Game Here]()
+* [The Bee Game Presentation](https://www.canva.com/design/DAGnmDYIDQo/C7kUFL_jMfZ9g7deil8AjA/edit?utm_content=DAGnmDYIDQo&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
+* [3d Visualisation of All Moth Paths](https://www.desmos.com/3d/fb2pxzfkns)
 
-## Features
-
-- features here 
-
----
-
-## Input/Output
-All interactions will be handled through keyboard input. Use the below chart to navigate character controls.
-
-| Key        | Action                                                             | Continuous? |
-|------------|--------------------------------------------------------------------|-------------|
-| `i` / `o`  | Rotate scarecrow’s head left / right                              | ✅          |
-| `u`        | Toggle between basic and upgraded scarecrow versions              | ❌          |
-| `l`        | Toggle walk-in-place animation                                     | ❌          |
-| `r`        | Toggle freeform walking mode                                       | ❌          |
-| `←` / `→`  | Turn scarecrow left / right during freeform walk                  | ✅          |
-| `a` / `d`  | Tilt camera left / right                                           | ✅          |
-| `w` / `s`  | Tilt camera up / down                                              | ✅          |
-| `q` / `e`  | Zoom camera in / out (along gaze direction)                        | ✅          |
-| `space`    | Cycle through camera views (front, side, back, first-person)      | ❌          |
-| `0`        | Reset camera to original position and orientation                 | ❌          |
-| `1` / `2`  | Decrease / increase limb swing speed                               | ❌          |
-| `3` / `4`  | Decrease / increase walk speed multiplier                          | ❌          |
-| `5`        | Reset scarecrow to origin and default movement parameters          | ❌          |
 
 ---
 
-## ▶️ How to Run
+## Motivation  
+I’m taking an advanced computer graphics course and wanted to explore Pygame + OpenGL by building a project that ties together everything we’ve learned this semester including geometric transforms, scene graphs, dynamic cameras, collision detection using AABB, custom OBJ loading, multithreaded loading screens, and more.
 
-1. Navigate to the project folder:
+---
+
+## Environment  
+This project was developed and tested in the course Conda environment. I activate it locally by running the following command:  
 ```bash
-cd Project2_Transform_Viewing
+conda activate cpsc515
 ```
-2. Run the main program:
-```bash
-python P2_transformView_main_BLANK.py # for windows
-python3 P2_transformView_main_BLANK.py # for mac
-```
-3. Make sure you have the required libraries installed:
-```bash
-pip install numpy pygame PyOpenGL
-``` 
+To recreate it locally, see the below two sections.
 
+---
+
+
+## Dependencies 
+
+All core graphics functionality uses only NumPy, Pygame, and PyOpenGL. Additional helper libraries include:
+
+| Library  | Version    | Install Command                               |
+| -------- | ---------- | --------------------------------------------- |
+| numpy    | `>=1.24.0` | `pip install numpy`                           |
+| pygame   | `>=2.5.2`  | `pip install pygame`                          |
+| PyOpenGL | `>=3.1.6`  | `pip install PyOpenGL PyOpenGL_accelerate`    |
+| Pillow   | `>=10.0.0` | `pip install pillow` *(for future texturing)* |
+
+You can also find all required installs in the `requirements.txt` file.
+
+---
+
+
+## How to Run Locally
+
+1. **Clone the repo**  
+   ```bash
+   git clone https://github.com/nhuante/ImageProcessing_Graphics_Python.git
+   cd beeGameFinal
+   ```
+
+2. **Create & Activate a Virtual Environment** 
+This is *entirely* necessary, but it is best practice to do so to avoid 
+* Polluting your system Python, which might lead to version conflicts later if you start another project that needs a different version of, say, `pygame` or `numpy`
+    ```bash
+       python3 -m venv venv
+        # on macOS/Linux
+        source venv/bin/activate
+        # on Windows (PowerShell)
+        ./venv/Scripts/Activate.ps1
+    ```
+
+3. **Install Dependencies**
+Make sure you have `pip >= 20.3` then:
+    ```bash
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    ```
+
+4. **Run the Game**
+    ```bash
+        python beeGame_main.py
+    ```
+
+
+---
+
+## Game Concept and Objective 
+
+You play as a friendly, hard-working bee who must collect pollen and return it to the hive before time runs out. There are two "rooms" in the game:
+
+* Lobby: Practice controls and read the help screen.
+* Level 1: You have 120 seconds to
+    * Collect pollen from flowers
+    * Avoid or attack moth enemies (+points if you’re “angry,” –health if you’re not)
+    * Deliver pollen to the beehive (+20 points per drop-off)
+* Win/Lose: Reach 100 points to win; health ≤ 0 → loss.
+
+
+--- 
+
+## Player Controls - Look Up Table 
+Use the below chart to navigate game controls.
+
+| Key                       | Action                                           | Continuous?        |
+| -----------------         | ------------------------------------------------ | :---------:        |
+| **Movement**              |                                                  |                    |
+| `←` / `→` / `↑` / `↓`     | Turn & fly forward/back/left, right              |      ✔️            |
+| `Left Shift` / `Left Ctrl`| Ascend / Descend                                 |      ✔️            |
+|                           |                                                  |                    |
+| **Camera**                |                                                  |                    |
+| `W`/`A`/`S`/`D`           | Pan camera up/left/down/right                    |      ✔️            |
+| `Q`/`E`                   | Zoom in / out                                    |      ✔️            |
+|                           |                                                  |                    |
+| **View Modes**            |                                                  |                    |
+| `Space`                   | Cycle: Third-person → First-person → …           |      ❌            |
+| `0`                       | Reset camera in current view mode                |      ❌            |
+|                           |                                                  |                    |
+| **Game**                  |                                                  |                    |
+| `P`                       | Pause / Unpause                                  |      ❌            |
+| `Z`                       | Activate “Angry” speed burst (once per recharge) |      ❌            |
+| `X`/`C`                   | Pick up / Drop off pollen particle               |      ❌            |
+|                           |                                                  |                    |
+| **UI Interaction**        |                                                  |                    |
+| `Mouse`                   | Click GUI Buttons                                |      ❌            |
+
+
+
+---
+
+## Developer-Mode Controls - Look Up Table 
+*(Press **Delete** to toggle developer mode)*
+
+| Key | Effect                                           |
+| --- | ------------------------------------------------ |
+| 1   | ↓ Animation speed                                |
+| 2   | ↑ Animation speed                                |
+| 3   | ↓ Fly (walk) speed multiplier                    |
+| 4   | ↑ Fly (walk) speed multiplier                    |
+| 5   | ↓ Bee health by 20                               |
+| 6   | ↑ Score by 50                                    |
+| 7   | Toggle showing AABB colliders                    |
+| 8   | Regenerate flower positions                      |
+| 9   | Crash the game (throws an error to test “Uh-Oh”) |
+
+
+---
+
+
+## Potential Additions 
+
+* Deploy to website 
+* More complex difficulty levels and more levels 
+    * Idea 1 - Pre-defined number of levels that the user can play through that is hooked up to a level select screen. The user should be able to replay any level they have already completed or play the current highest level that they have not yet completed. The user's overall score should be cached through their play time. 
+    * Idea 2 - Endless "runner" mode with a personal high score. The user will play until they lose their health, with each next level being randomly generated (in terms of the enemies and props). The user's personal best should be cached so they can play multiple times and keep the highest score of all their runs. 
+* Additional garden decor and interactable objects 
+    * Idea 1 - Wind tunnel that gives a temporary boost to the player bee (mario-kart arrow boost style)
+    * Idea 2 - Thorns on some flowers that harm the player bee if they collide with them 
+    * Idea 3 - Different types of flowers whose pollen give different benefits to the player
+    * Idea 4 - A prop (such as a bird bath) where the player can go and regenerate their health 
+* New enemy types, power-ups, puzzles, etc. to keep the player engaged, challenged, and learning. 
+* Two-Player/Co-Op Mode (would require some looking into servers)
+* Sound/Music
+* Attack Animations + More Character Animations
+
+---
+
+## Challenges & Takeaways
+
+**Biggest Challenges**
+* Refactoring and debugging OBJ file loader 
+* Building a responsive, mulithreaded loading screen 
+* Pausing and maintaing accurate countdown timers 
+* Implementing robust AABB collision detection
+
+**Key Takeaways**
+* How grateful I am to have game engines like Unity and Unreal that make creating and manipulating 2d and 3d environments so easy! And that optimize the game environment very well.
+* I feel now I understand how some of these tools would be implemented within the engine and can help me be a better designer and developer. 
+* First time I have used pygame and openGL to create complete projects and I enjoyed it. 
+
+---
 
 ## References
 * [Clamping Floats in Python](https://stackoverflow.com/questions/9775731/clamping-floating-numbers-in-python)

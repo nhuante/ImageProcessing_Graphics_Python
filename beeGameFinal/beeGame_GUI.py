@@ -3,24 +3,24 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import numpy as np
-from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18    # Import GLUT for text rendering
+from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18   
 from beeGame_model import Bee
-import math
-# import time 
+
+''' this file handles all ui elements '''
 
 
-# button class 
+# button obv 
 class Button:
     def __init__(self, label, button_width = 100, button_height = 30, bottomLeft_x = 0, 
                  bottomLeft_y = 0, screen_width = 500, screen_height = 500, initial_color=(0.2, 0.2, 0.2)):
         # placement and text properties
-        self.label = label 
-        self.button_width = button_width
-        self.button_height = button_height
-        self.bottomLeft_x = bottomLeft_x 
-        self.bottomLeft_y = bottomLeft_y 
-        self.screen_width = screen_width
+        self.label = label                      # the text on the buttom  
+        self.button_width = button_width        # how wide is the button (horizontally)
+        self.button_height = button_height      # how tall is the buttom (vertically)
+
+        self.bottomLeft_x = bottomLeft_x        # bottom left corner's x position (0 is at the bottom left of the window)
+        self.bottomLeft_y = bottomLeft_y        # bottom left corner's y position (0 is at the bottom left of the window)
+        self.screen_width = screen_width        
         self.screen_height = screen_height
 
         # function properties 
@@ -34,6 +34,10 @@ class Button:
 
     # returns if the button has been clicked 
     def is_clicked(self, mouse_x, mouse_y):
+        # here we reformat the mouse_y position
+        #   - this is because pygame calculates it based on having y=0 at the top left corner of the window 
+        #   - however, opengl assumes y=0 is at the bottom left corner of the window 
+        #   - so we take care of this conversion in the line below
         mouse_y = - (mouse_y - self.screen_height)
         # checks if the mouse clicked within the boundaries of the button 
         return (self.bottomLeft_x <= mouse_x <= self.bottomLeft_x + self.button_width) and \
@@ -42,12 +46,9 @@ class Button:
     # places the text within the button's space 
     def draw_text(self, font=GLUT_BITMAP_HELVETICA_18, color=(1.0, 1.0, 1.0)):
         text = self.label 
-        y = self.bottomLeft_y + (self.button_height // 2.5) 
-        x = self.bottomLeft_x + (self.button_width - len(text) * 9) // 2  # Center the text
-
-        # color = (1.0, 1.0, 1.0) # white 
+        y = self.bottomLeft_y + (self.button_height // 2.5)                 # centers vertically on button 
+        x = self.bottomLeft_x + (self.button_width - len(text) * 9) // 2    # centers horizontally on the button
         glColor3f(*color)
-
         glRasterPos2f(x, y)
         for char in text:
             glutBitmapCharacter(font, ord(char))
@@ -77,7 +78,7 @@ class UI:
         self.win_width = win_width
         self.win_height = win_height
 
-        # text elements
+        # text elements for the headers
         self.lobby_text = "Lobby"
         self.level_text = "Level 1"
         self.help_menu_title = "Lost?"
@@ -187,12 +188,14 @@ class UI:
 
                                       initial_color=(205/255, 0, 0))
 
+
     # draw text on the screen at position (x, y)
     def draw_text(self, text, x, y, font=GLUT_BITMAP_HELVETICA_18, color=(1.0, 1.0, 1.0)):
         glColor3f(*color)  # White color for the text by default
         glRasterPos2f(x, y)
         for char in text:
             glutBitmapCharacter(font, ord(char))
+
 
     # draws  a rectangle 
     def draw_rectangle(self, bottomLeft_x, bottomLeft_y, topRight_x, topRight_y, color=(0,0,0)):
@@ -204,7 +207,8 @@ class UI:
         glVertex2f(bottomLeft_x, topRight_y)
         glEnd()
 
-    # draw the gui elements (buttons) on the lobby screen
+
+    # draw the lobby screen
     def draw_lobby_gui(self, bee):
 
         # draw the top text (lobby)
@@ -215,10 +219,12 @@ class UI:
         elif bee.is_recharging: mode = "charging"
         else: mode = "normal"
 
+        # get the appropriate bee mode image as a texture
         tex_id, iw, ih = self.mode_textures[mode]
         icon_x = self.win_width // 2 + 90
         icon_y = self.win_height - 45
 
+        # draw the image
         glEnable(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, tex_id)
         glColor3f(1,1,1)
@@ -238,10 +244,9 @@ class UI:
         # draw the current countdown number next to the image to the right of the bee mode image 
         if bee.angry_bee_mode or bee.is_recharging: countdown = str(bee.current_countdown_num)
         else: countdown = ""
-
         self.draw_text(countdown, self.win_width // 2 + 150, self.win_height - 30)
 
-        # draw the buttons (start game and help)
+        # draw the buttons (start game, difficulty, help)
         self.start_game_button.draw_text()
         self.start_game_button.draw_button()
         
@@ -256,7 +261,8 @@ class UI:
                             topRight_x=810, topRight_y=810, 
                             color=(64/255, 64/255, 64/255))
 
-    # draw the gui elements in the lobby (when paused)
+
+    # draw the lobby pause screen 
     def draw_lobby_pause_gui(self):
         # draw the top text (level 1)
         self.draw_text("Paused", self.win_width // 2 - 30, self.win_height // 2)
@@ -267,22 +273,22 @@ class UI:
                             color=(0, 153/255, 0))
 
 
-    # draw the gui elements in the level 
+    # draw the level screen 
     def draw_level_gui(self, score, level, health, timer_left_ms, bee:Bee):
         distance_from_top = self.win_height - 30
-        # draw the top text (level 1)
+        # draw the top text ("level 1")
         self.draw_text(f"Level:{level}", self.win_width - 300, distance_from_top)
 
-        # draw other in-game stats in the header
-        self.draw_text(f"Score: {score}", 50, distance_from_top)  # score
-                             
+        # draw the current score in the header
+        self.draw_text(f"Score: {score}", 50, distance_from_top)                            
+
+        # draw the current bee health in the header             
         health_color = tuple() 
+        # change the color of it based on how much health the bee has left 
         if 25 < health <= 50: health_color = (220/255, 228/255, 3/255)
         elif health <= 25: health_color = (204/255, 0, 0)
         else: health_color = (1, 1, 1)
-        self.draw_text(f"Health: {health}%", 230, distance_from_top, color=health_color)                  # health 
-
-        
+        self.draw_text(f"Health: {health}%", 230, distance_from_top, color=health_color)                 
 
         # draw the appropriate bee mode image at the center of the header
         if bee.angry_bee_mode: mode = "angry"
@@ -290,10 +296,11 @@ class UI:
         elif bee.health_percentage < 50: mode = "hurt"
         else: mode = "normal"
 
+        # get the appropriate bee mode image as a texture
         tex_id, iw, ih = self.mode_textures[mode]
         icon_x = self.win_width // 2 -15
         icon_y = self.win_height - 45
-
+        # draw the image
         glEnable(GL_TEXTURE_2D)
         glBindTexture(GL_TEXTURE_2D, tex_id)
         glColor3f(1,1,1)
@@ -310,13 +317,12 @@ class UI:
         glBindTexture(GL_TEXTURE_2D, 0)
         glDisable(GL_TEXTURE_2D)
 
-        # draw the current countdown number next to the image to the right of the bee mode image 
+        # draw the current countdown number in the header (for things like angry mode and recharging mode)
         if bee.angry_bee_mode or bee.is_recharging: countdown = str(bee.current_countdown_num)
         else: countdown = ""
-
         self.draw_text(countdown, self.win_width // 2 + 40, self.win_height - 30)
 
-        
+        # draw the current time left to win the game 
         self.draw_text(f"Sec Left: {timer_left_ms//1000}", self.win_width - 150, distance_from_top)    # timer 
 
         # draw header rectangle 
@@ -342,6 +348,7 @@ class UI:
                             topRight_x=810, topRight_y=self.win_height // 2 + 30, 
                             color=(0, 153/255, 0))
         
+
     # draw the gui elements in the level (when game is over)
     def draw_end_of_game_gui(self, gameWon: bool, bee:Bee):
         # draw the main text 
@@ -350,7 +357,6 @@ class UI:
             x_offset_to_center = 30
         else: 
             text = "Game Over...duh duh duhh"
-            color = (204/255, 0, 0)
             x_offset_to_center = 100
         self.draw_text(text, self.win_width // 2 - x_offset_to_center, self.win_height // 2)
 
@@ -358,7 +364,7 @@ class UI:
         # draw the appropriate bee mode image at the center of the header
         if bee.health_percentage <= 0: mode = "dead"
         else: mode = "won"
-        
+        # draw the image twice, at the left and right of our end of game message
         for offset in [-200, 200]:
             tex_id, iw, ih = self.mode_textures[mode]
             icon_x = self.win_width // 2 + offset
@@ -392,9 +398,12 @@ class UI:
                             topRight_x=810, topRight_y=self.win_height // 2 + 30, 
                             color=(64/255, 64/255, 64/255))
         
+
     # draw the loading screen 
     def draw_loading_screen(self, dots:str):
+        # main text 
         self.draw_text(f"Loading{dots}", self.win_width // 2 - 150, self.win_height // 2)
+
         # draw banner rectangle 
         self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y=self.win_height // 2 - 20, 
                             topRight_x=810, topRight_y=self.win_height // 2 + 30, 
@@ -404,24 +413,32 @@ class UI:
                             topRight_x=self.win_width, topRight_y=self.win_height, 
                             color=(0, 0, 0))
     
-    # draw the screen that will show if something goes wrong 
+
+    # draw the screen that will show if something goes wrong (an error is raised somewhere in the main game loop)
     def uh_oh_screen(self):
+        # mani text
         self.draw_text(f"Uh Oh!! Something went really wrong!!", self.win_width // 2 - 150, self.win_height // 2)
         self.draw_text(f"Press ESC to quit.", self.win_width // 2 - 75, self.win_height // 2 - 25)
+
         # draw banner rectangle 
         self.draw_rectangle(bottomLeft_x=-10, bottomLeft_y=self.win_height // 2 - 40, 
                             topRight_x=810, topRight_y=self.win_height // 2 + 30, 
                             color=(153/255, 0, 0))
+        
         # draw rectangle as the background of the menu - black 
         self.draw_rectangle(bottomLeft_x=0, bottomLeft_y=0, 
                             topRight_x=self.win_width, topRight_y=self.win_height, 
                             color=(0, 0, 0))
 
+
     # check if a button was clicked. returns name of button or None 
+    # ==> returns the name of the button that was clicked
     def check_if_button_clicked(self, mouse_x, mouse_y, mode, help):
         # print(f"Mouse Position: x={mouse_x}, y={mouse_y}")  # Debugging the mouse position
         button_clicked = None 
 
+        # based on the current mode of the game, we will only listen to the appropriate buttons 
+        # (i.e. the buttons currently available to the user on the screen)
         if mode == "Lobby":
             if help: # if in help menu only listen for exit help button 
                 if self.exitHelp_button.is_clicked(mouse_x, mouse_y):
@@ -445,8 +462,7 @@ class UI:
         return button_clicked
 
 
-
-    # handles when the help button is clicked 
+    # draws the help screen  
     def draw_help_menu(self):
         # draw the exit button on top of all other elements 
         self.exitHelp_button.draw_text()
@@ -470,7 +486,7 @@ class UI:
             self.draw_text(line, 25, self.win_height - top_offset)
             top_offset += 25
 
-        # draw the general instructions
+        # draw the controls below that
         controls_lines = [ '''----------------------------------------------------------------  ''', 
                             '''Controls''', 
                             # '''          ''', 

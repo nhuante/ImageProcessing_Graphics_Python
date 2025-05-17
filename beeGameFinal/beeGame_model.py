@@ -6,10 +6,8 @@ from OpenGL.GLU import *
 import numpy as np
 import math 
 import random 
-# import time 
-from beeGame_collisions import draw_AABB, draw_boundingSphere, collisionTest_AABBs, collisionTest_spheres
-# import beeGame_OBJFileLoader
-from beeGame_sceneObjects import read_object_positions_file, create_objects_and_writeif
+from beeGame_collisions import draw_AABB, collisionTest_AABBs
+from beeGame_sceneObjects import read_object_positions_file
 
 '''
     THESE ARE OBJECTS THAT ARE MODELED USING OPENGL METHODS AND FUNCTIONS
@@ -71,7 +69,7 @@ def rotate_vector(vector, angle_degrees, rot_axis = "Y", custom_axis:tuple=()):
 
 class Bee:
     def __init__(self):
-        # animation variables 
+        # ---------------- FLYING ANIMATION VARIABLES -------------------
         self.anim_speed = 1.0           # master bee movement animation speed 
 
         self.wing_angle = 0             # wing animation parameters
@@ -87,7 +85,7 @@ class Bee:
         self.stinger_speed = 0.006
         self.stinger_range = 5
 
-        self.pupil_x_offset = 0            # pupil animation parameters
+        self.pupil_x_offset = 0        # pupil animation parameters
         self.pupil_speed = 0.01
         self.pupil_range_x = 0.27
         self.pupil_range_y = 0.35
@@ -97,17 +95,20 @@ class Bee:
         self.pupil_pause_time = random.randint(2000, 3000)  # Random pause time (in milliseconds)
         self.last_pupil_change_time = pygame.time.get_ticks()  # Last time the pupil changed position
 
-        self.current_position = ()
-    
+        # ---------------- FLYING MOVEMENT VARIABLES -------------------
+        self.current_position = ()              # will always hold the bee's current (x, y, z) position
 
         # freeform movement motion parameters
-        self.walk_direction = np.array([0.0, 0.0, 1.0]) # unit vector; initially aligned with z-axis ()
-        self.walk_angle = 0.0 # the angle (degrees) between the walk_direction and the z-axis [0, 0, 1] ()
-        self.walk_speed_mp = 0.7
-        self.walking_speed = 1.3
-        self.walk_speed = self.walk_speed_mp * self.walking_speed # straightline and freeform walking speed ()
-        self.walk_vector = np.array([100.0, 10.0, 0.0]) # = walk_speed * walk_direction; updated for every iteration to translate the playerBee during walking ()
-        self.height_offset = 0.0
+        self.walk_direction = np.array([0.0, 0.0, 1.0])                 # unit vector; initially aligned with z-axis ()
+        self.walk_angle = 0.0                                           # the angle (degrees) between the walk_direction and the z-axis [0, 0, 1] ()
+        
+        self.walk_speed_mp = 0.7                                                # used for debugging to find the best flying speed
+        self.walking_speed = 1.3                                                
+        self.walk_speed = self.walk_speed_mp * self.walking_speed       # flying speed of bee
+
+        self.walk_vector = np.array([100.0, 10.0, 0.0])                 # = walk_speed * walk_direction; updated for every iteration to translate the playerBee during walking ()
+        self.height_offset = 0.0                                        # how much to initially offset the bee above the y-plane
+
         self.actively_moving = False
         self.in_reverse = False
 
@@ -115,10 +116,11 @@ class Bee:
         self.normal_turn_speed = 3
         self.angry_turn_speed = 6
 
-
+        # ---------------- PAUSED TRACKER -------------------
         # game controls 
         self.paused = False
 
+        # ---------------- ANGRY MODE VARIABLES -------------------
         # angry mode 
         self.angry_bee_mode = False
         self.angry_mode_start_time = 0              # time angry mode period begins
@@ -130,32 +132,35 @@ class Bee:
 
         self.current_countdown_num = -1
 
+        # ---------------- TIMER/COUNTDOWNS VARIABLES -------------------
         # timer when paused var 
         self.temp_time_ran_for_pause = 0        # (for angry or recharging mode)
         self.temp_game_time_ran_for_pause = 0   # (for overall game time to play)
 
-        # game stats
+        # game timer
         self.initial_game_timer = 1000 * 120        # in-game timer - replace the 5 with num of seconds desired
         self.game_time_to_win = 1000 * 120       
         self.level_timer_start_time = 0
 
+        # ---------------- GAME STATS VARIABLES -------------------
         self.score = 0                               # in-game score count
         self.level = 1                               # in-game level
         self.health_percentage = 100                 # in-game health bar
 
-        # pollen interactions 
+        # ---------------- POLLEN INTERACTION VARIABLES -------------------
         self.carrying_pollen = None 
         self.leg_carrying_pollen = False
 
 
 
 
-    # Resets the bee to be placed at the origin and movement parameters to their starting values
+    # resets the bee to be placed at it's spawn point and movement parameters to their starting values
     def resetToOrigin(self):
         self.walk_direction = np.array([0.0, 0.0, 1.0])
         self.walk_angle = 0.0 
         self.walk_vector = np.array([100.0, 10.0, 0.0])
     
+
     # activate pause mode 
     def start_pause(self):
         self.paused = True
@@ -189,6 +194,8 @@ class Bee:
 
 
     # Update bee's walk_direction and walk_vector based on walk_angle changed by key input
+    #   - only allows the bee to update it's walk_vector in the proposed direction IF if will not 
+    #       collide with any obstacle as a result
     def update_walk_vector(self, reverse, boundaries, obstacles):
         # rotate current walk vector by walk angle 
         rotated_direction = rotate_vector(self.walk_direction, self.walk_angle, rot_axis="Y")
@@ -240,6 +247,10 @@ class Bee:
                 self.walk_vector[i] = potent_new_walk_vector[i]
         return True
 
+
+    # Update bee's height_offset based on key input that is passed in
+    #   - only allows the bee to update it's height_offset in the proposed direction IF if will not 
+    #       collide with any obstacle as a result
     def update_height_offset(self, height_offset_per, garden_y_boundaries, obstacles):
         if height_offset_per != 0.0:
             # clamp proposed height offset to the garden boundaries 
@@ -295,14 +306,18 @@ class Bee:
         self.pupil_position[0] += (self.pupil_target[0] - self.pupil_position[0]) * self.pupil_speed
         self.pupil_position[1] += (self.pupil_target[1] - self.pupil_position[1]) * self.pupil_speed
     
+
     # only called when the level starts 
     def start_level_timer(self):
         self.level_timer_start_time = pygame.time.get_ticks() 
         print(f"--Started Level Timer")
 
+
+    # decreases the level timer 
     def handle_level_timer(self):
         current_time = pygame.time.get_ticks() 
         self.game_time_to_win = self.initial_game_timer - (current_time - self.level_timer_start_time)
+
 
     # only called when we start angry mode
     def activate_angry_mode(self):
@@ -318,6 +333,7 @@ class Bee:
         self.current_countdown_num = self.angry_mode_length // 1000
         print(f"\nANGRY MODE ACTIVATED")
         print(f"     Countdown: {self.current_countdown_num}")
+
 
     # called at every iteration of the main loop when actively mad or recharging
     def handle_angry_mode(self):
@@ -360,6 +376,7 @@ class Bee:
                     self.current_countdown_num -= 1
                     print(f"     Countdown: {self.current_countdown_num}")
 
+
     # resets when switching from lobby to level or vice versa 
     def reset_bee_switching_rooms(self):
         self.paused = False 
@@ -370,6 +387,7 @@ class Bee:
         self.game_time_to_win = self.initial_game_timer
         self.level = 1
         self.resetToOrigin()
+
 
     # create bee geometry 
     def draw_bee(self, draw_bounding_boxes=False): 
@@ -662,6 +680,8 @@ class Bee:
         #--------------Code above will create the geometry of the bee -------------------
         glPopMatrix() # DO NOT DELETE THIS
     
+
+    # gets the bounding volume of the bee 
     def get_bounding_volume(self, d=2.0 ):
         # position of bee’s center:
         x = self.walk_vector[0]
@@ -670,7 +690,6 @@ class Bee:
         # half‐extent (tweak as needed for tighter/looser fit)
         # d = 2.0
         return (x-d, y-d, z-d), (x+d, y+d, z+d)
-
 
     # create fence geometry 
     def draw_fence(self):
@@ -798,6 +817,7 @@ class Flower:
     def __init__(self, x, y, z, stem_height=2.0, stem_thickness=0.1,
                  petal_size=0.4, petal_thickness=0.05,
                  head_size=0.2, scale=(1, 1, 1)):
+        # flower position and dimensions variables
         self.pos = (x, y, z)
         self.stem_height = stem_height
         self.stem_thickness = stem_thickness
@@ -812,6 +832,7 @@ class Flower:
         self.head_col  = (1.0, 1.0, 0.0)         # yellow
 
     def draw(self, show_bounding_box:bool):
+        # draw the bounding box if show_bounding_box is toggled on
         mins, maxs = self.get_bounding_volume()
         if show_bounding_box:
             cx = (mins[0] + maxs[0]) / 2
@@ -821,8 +842,9 @@ class Flower:
                       center=(cx, cy, cz))
 
         glPushMatrix()
-        # glTranslatef(0, self.stem_height * 0.8, 0)
+        # move the entire flower to be flush with the ground and at it's xz-position in the garden
         glTranslatef(self.pos[0], ((self.stem_height * self.scale[1]) / 2) + self.pos[1], self.pos[2])
+        # scales the entire flower
         glScalef(*self.scale)
 
         # 1) Stem
@@ -871,7 +893,10 @@ class Flower:
 
 
 
-
+# this is the master create flowers function 
+#   - here you can change the scalings, offset off the z-plane, and rotation of the flowers 
+#   - this will read in the cached positions from two files (if an error occurs will re-generate some and write those to the files)
+#       and then return the Flower objects and positions
 def create_flowers(num_flowers:int, force_regenerate:bool):
     scalings = [(1, 1, 1), (2.5, 2.5, 2.5)]
     height = -12
@@ -909,6 +934,8 @@ def create_flowers(num_flowers:int, force_regenerate:bool):
     return all_objects, all_positions
 
 
+# helper function for create_flower()
+#   - will take care of the I/O part and returns the positions of the flowers 
 def create_flowers_and_writeif(need_to_create_file:bool, positions_formatted:list, num_positions:int, 
                                path_of_file_to_write:str, 
                                default_scaling:tuple, default_height:int, default_rotation:tuple,
@@ -943,14 +970,6 @@ def create_flowers_and_writeif(need_to_create_file:bool, positions_formatted:lis
                                          stem_height=stem_height, stem_thickness=stem_thickness,
                                          petal_size=petal_size, petal_thickness=petal_thickness, 
                                          head_size=head_size, scale=default_scaling))
-            # prop_objects.append(Prop(f"./resources/models/{object_file_name}", 
-            #                         translation=(   random_x_pos,
-            #                                         default_height, 
-            #                                         random_z_pos), 
-            #                         rotation=default_rotation, 
-            #                         scale=default_scaling, 
-            #                         bv_type=default_bv_type))
-            
             # save it's position to the file 
             object_positions_file.write(f"{random_x_pos} {default_height} {random_z_pos} {default_rotation[0]} {default_rotation[1]} {default_rotation[2]} {default_rotation[3]} {default_scaling[0]} {default_scaling[1]} {default_scaling[2]} {default_bv_type}\n")
             if type_of_prop == "CROCUS": positions.append((random_x_pos, default_height, random_z_pos))
@@ -968,9 +987,7 @@ def create_flowers_and_writeif(need_to_create_file:bool, positions_formatted:lis
             pos_x = current_object[0]
             pos_y = current_object[1]
             pos_z = current_object[2]
-            # rotation = (current_object[3], current_object[4], current_object[5], current_object[6])
             scaling = (current_object[7], current_object[8], current_object[9])
-            # bv_type = current_object[10]
             # print("--extracted positions--")
 
             # generate it in the world 
@@ -978,13 +995,6 @@ def create_flowers_and_writeif(need_to_create_file:bool, positions_formatted:lis
                                          stem_height=stem_height, stem_thickness=stem_thickness,
                                          petal_size=petal_size, petal_thickness=petal_thickness, 
                                          head_size=head_size, scale=scaling))
-            # prop_objects.append(Prop(f"./resources/models/{object_file_name}", 
-            #                         translation=(   pos_x,
-            #                                         pos_y, 
-            #                                         pos_z), 
-            #                         rotation=rotation, 
-            #                         scale=scaling, 
-            #                         bv_type=bv_type))
             if type_of_prop == "CROCUS": positions.append((pos_x, pos_y, pos_z))
             print(f"--generated {type_of_prop} object from file's line {line} as a tuple: {current_object}--")
     return flower_objects, positions
@@ -998,42 +1008,47 @@ def create_flowers_and_writeif(need_to_create_file:bool, positions_formatted:lis
 
 class Pollen: 
     def __init__(self, radius:float, color:tuple, pollen_id:int, initial_x:float, initial_y:float, initial_z:float):
+        self.pollen_id = pollen_id
+
+        # position variables
         self.x_pos, self.initial_x = initial_x, initial_x
         self.y_pos, self.initial_y = initial_y, initial_y
         self.z_pos, self.initial_z = initial_z, initial_z
-        self.pollen_id = pollen_id
+
+        # size and color
         self.color = color 
         self.radius = radius
 
+        # pollen mode 
         self.carried = False 
         self.falling = False
-
         self.falling_difference = 0
 
+
+    # resets to its spawn point (on top of its respective flower)
     def reset_pollen(self):
         self.carried = False 
         self.falling = False 
         self.falling_difference = 0 
+
 
     def draw_pollen(self, draw_bounding_boxes:bool, bee:Bee):
         if draw_bounding_boxes:
             minc, maxc = self.get_bounding_volume()
             draw_AABB(minc, maxc, center=(self.x_pos, self.y_pos, self.z_pos))
 
-        if self.carried:
+        if self.carried:                                    # carried by bee
             self.falling_difference = 0
             # offset from the bee's current position 
             self.x_pos = bee.walk_vector[0]
             self.y_pos = bee.walk_vector[1] + bee.height_offset - 5.5
             self.z_pos = bee.walk_vector[2]
-        elif self.falling:
+        elif self.falling:                                  # falling or on ground
             self.falling_difference -= .1
-            # should keep falling until hits the ground --> go to spawn location 
-            # self.x_pos = bee.walk_vector[0]
+            # should keep falling until hits the ground --> stays at the ground 
             self.y_pos = max(self.y_pos + self.falling_difference, -12)
-            print(f"---pollen falling, at position ({self.x_pos}, {self.y_pos}, {self.z_pos}")
-            # self.z_pos = bee.walk_vector[2]
-        elif not self.carried and not self.falling:
+            # print(f"---pollen falling, at position ({self.x_pos}, {self.y_pos}, {self.z_pos}")
+        elif not self.carried and not self.falling:         # at spawn point
             self.falling_difference = 0
             # go to spawn position 
             self.x_pos = self.initial_x
@@ -1062,20 +1077,19 @@ class Moth:
     def __init__(   self, moth_id:int, 
                     initial_x:float, initial_y:float, initial_z:float, 
                     target_positions:list ):
-        # where the next target point is, current position, the spawn position
-        # self.current_x_pos, self.initial_x = initial_x, initial_x
-        # self.current_y_pos, self.initial_y = initial_y, initial_y
-        # self.current_z_pos, self.initial_z = initial_z, initial_z
-
+        # initial target position (just the first one in the list)
         self.target_positions = target_positions
         self.current_target_index = 0
 
+        # initial location
         self.current_x_pos, self.initial_x, self.target_x_pos = target_positions[0][0], target_positions[0][0], target_positions[0][0]
         self.current_y_pos, self.initial_y, self.target_y_pos = target_positions[0][1], target_positions[0][1], target_positions[0][1]
         self.current_z_pos, self.initial_z, self.target_z_pos = target_positions[0][2], target_positions[0][2], target_positions[0][2]
 
+        # id
         self.moth_id = moth_id
 
+        # colors
         self.orangeish = (179/255, 125/255, 18/255)
         self.brown = (119/255, 80/255, 0/255)
         self.mud = (88/255, 72/255, 41/255)
@@ -1088,9 +1102,11 @@ class Moth:
         self.leg_color = self.black
         self.antenna_color = self.black
 
+        # health stats (NOTE: not actually used at the moment)
         self.health = 100
         self.max_health = 100
 
+        # move / animation speeds
         self.move_speed = 0.30 
         self.anim_speed = 1
         self.yaw = 0
@@ -1103,6 +1119,7 @@ class Moth:
         self.leg_speed = 1
         self.leg_range = 1.1
 
+        # modes
         self.paused = False 
         self.chasing_bee = False
 
@@ -1121,6 +1138,7 @@ class Moth:
         self.leg_angle = math.sin(pygame.time.get_ticks() * self.leg_speed * self.anim_speed) * self.leg_range  # Adjust speed and range
     
 
+    # draw obv
     def draw_moth(self, bee:Bee, draw_bounding_boxes=False, obstacles:list=[]):
         # if dead, don't render 
         if self.health <= 0:
@@ -1273,18 +1291,6 @@ class Moth:
             if not blocked:
                 self.current_z_pos = potent_z_pos
 
-
-            #     # self.current_x_pos += dx * self.move_speed      # updates x_pos 
-            # if not (np.abs(current_pos[1] - current_target[1]) <= 1): 
-            #     if current_pos[1] < current_target[1]: dy = 1
-            #     else: dy = -1
-            #     # self.current_y_pos += dy * self.move_speed      # updates y_pos 
-            # if not (np.abs(current_pos[2] - current_target[2]) <= 1): 
-            #     if current_pos[2] < current_target[2]: dz = 1
-            #     else: dz = -1
-            #     # self.current_z_pos += dz * self.move_speed      # updates z_pos
-
-
             # turns directions into angles 
             self.yaw = math.degrees(math.atan2(dx, dz))
 
@@ -1328,18 +1334,8 @@ class Moth:
         glutSolidSphere(0.5, 16, 16)
         glPopMatrix()
 
-        #
+        
         # ---- WINGS ----
-        # glPushMatrix() 
-        # glColor3f(*wing_grey_color)    # light grey 
-        # glTranslatef(-dist_from_center_line, dist_to_line_up_above_bee, 0.0)
-        # glTranslatef(1, 0, 0)
-        # glRotatef(self.wing_angle, 0, 0, 1)  # Flap the left wing
-        # glTranslatef(-1, 0, 0)
-        # glScalef(scale_wing_length, scale_wing_thickness, scale_wing_width)     # flatten
-        # glutSolidCube(1)
-        # glPopMatrix()
-
         glColor3f(*self.wing_color)
         # Right wing
         glPushMatrix()
@@ -1423,7 +1419,7 @@ class Camera:
         self.tilt_angle_horizontal = 0.0
         self.zoom_distance = 0.0
 
-    # Task 7: Switch between 3 standard view modes: front, side, and back
+    # Switch between 3 standard view modes: front, side, and back
     #               For each view mode, pre-define camera parameters here 
     def switch_view(self):
         # Switch the current view_mode to the next in the cycle: 
@@ -1491,20 +1487,19 @@ class Camera:
 
 
 
-    # Task 8: Update camera parameters (eye_pos and look_at) based on the new 
+    # Update camera parameters (eye_pos and look_at) based on the new 
     #               tilt_angle_horizontal, tilt_angle_vertical, and zoom_distance updated by key input (A, D, W, S, Q, E)
     def update_view(self, playerBee):
         
         # if in first-person view, we update the view based on the playerBee's direction
         if self.view_mode in ["first-person", "follow"]:
-            # if self.view_mode == "follow": 
-            #     follow = True 
-            # else: 
-            #     follow = False
-            # we handle this in a separate function 
+            # we handle this in a separate function (follow the bee basically) 
             fpv_eye, fpv_look_at = self.update_fpv(playerBee, follow=(self.view_mode=="follow"))
+
+            # using that new information, calc the current gaze vector
             gaze = fpv_look_at - fpv_eye
 
+            # rotate it on its own right and up vectors 
             camera_right_axis = np.cross(self.view_up, gaze)
             camera_right_axis /= np.linalg.norm(camera_right_axis)
 
@@ -1514,21 +1509,19 @@ class Camera:
             final_gaze = rotate_vector(vector=gaze_after_pitch, angle_degrees=self.tilt_angle_horizontal, 
                                             rot_axis="CUSTOM", custom_axis=self.view_up)
             
+            # calc new look at point
             new_lookat = fpv_eye + final_gaze
+
             return fpv_eye, new_lookat
 
 
         # if in any of the third-person views, we update the view based on keyboard input
-        # else:
+
         # calculate the current gaze vector
         starting_look_at, starting_eye_pos = self.look_at, self.eye_pos
         base_gaze = starting_look_at - starting_eye_pos
 
-        # # temp for title angle vertical 
-        # new_title_angle_vertical = self.tilt_angle_vertical
-
         # axis to rotate on for vertical movements 
-        # vert_tilt_axis = "X"
         camera_right_axis = np.cross(self.view_up, base_gaze)
         camera_right_axis /= np.linalg.norm(camera_right_axis)
         # tilt vertically
@@ -1538,13 +1531,9 @@ class Camera:
         # tilt horizontally
         final_gaze = rotate_vector(vector=gaze_after_pitch, angle_degrees=self.tilt_angle_horizontal, 
                                             rot_axis="CUSTOM", custom_axis=self.view_up)
-        # new_lookat = self.look_at
-        # new_lookat[0] = self.look_at[0] + self.tilt_angle_horizontal
-        # new_lookat[1] = self.look_at[1] + self.tilt_angle_vertical
+
         new_lookat = self.eye_pos + final_gaze
-        ## calculate new eye position by moving the camera along the gaze vector by zoom_distance
-        # calculate the unit vector of the current gaze vector
-        # unit_rotated_gaze = rotated_gaze / np.linalg.norm(rotated_gaze)
+
         unit_rotated_gaze = final_gaze / np.linalg.norm(final_gaze)
 
         # calculate the new eye_position

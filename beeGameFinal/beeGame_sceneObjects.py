@@ -1,8 +1,5 @@
-# handles all the loading, collisions, and drawing of any imported OBJ objects 
-import os
-import numpy as np
 from OpenGL.GL import *
-from beeGame_OBJFileLoader import OBJ       # or wherever your OBJ class lives
+from beeGame_OBJFileLoader import OBJ       
 from beeGame_collisions import Transform, apply_transform_to_mesh, draw_AABB
 import random 
 
@@ -11,11 +8,11 @@ import random
         THEY INCLUDE 
         - PROP [CLASS]
         - GRASS 
-        - FLOWERS
+        - FLOWERS (NOT USED IN FINAL SUBMISSION, SUPER LARGE MESH, NOT EFFICIENT TO USE THEM)
         - BEEHIVE
         - 
 '''
-
+# used for obj objects that are loaded in
 class Prop:
     # load the OBJ, apply the initial transformations, remember the bv type 
     def __init__(self, obj_filename: str, translation = (0, 0, 0), 
@@ -51,7 +48,7 @@ class Prop:
             return -1, -1
 
 # checks for a text file containing positions of objects 
-# ==> returns (needToCreate: bool, positions:list, num_of_positions:int)        
+#   ==> returns (needToCreate: bool, positions:list, num_of_positions:int)        
 def read_object_positions_file(pathOfFile:str, ):
     # check if the grass objects file exists and if it has positions in it 
     need_to_create_file = False
@@ -67,13 +64,16 @@ def read_object_positions_file(pathOfFile:str, ):
             need_to_create_file = True
             positions_file.close()
             print("--file empty...need to create file")
-        else: # if file not empty, parse the contents 
+        # if file not empty, parse the contents
+        else:  
             for line in positions_from_file:
                 if type(line) != str:
                     continue
-                # looks like this "x_pos y_pos z_pos rot_x rot_y rot_z scale_x scale_y scale_z bv_type"
-                # print(line)
+                # each line looks like this:
+                #       "x_pos y_pos z_pos rot_x rot_y rot_z scale_x scale_y scale_z bv_type"
+                # print(line)                               # NOTE: uncomment if you want to see each line print as it is read in (before it gets processed)
                 line_items = line.split() 
+                # if the line has 11 elements (if not we pass so we don't get indexing issues )
                 if len(line_items) == 11: 
                     positions_formatted.append((float(line_items[0]), float(line_items[1]), float(line_items[2]),                   # translation
                                                 float(line_items[3]), int(line_items[4]), int(line_items[5]), int(line_items[6]),   # rotation
@@ -89,8 +89,9 @@ def read_object_positions_file(pathOfFile:str, ):
     # return values 
     return (need_to_create_file, positions_formatted, len(positions_formatted))
 
-# creates all the necessary prop objects and writes to a new file if necessary 
-# ==> returns (prop_objects:list<Prop>)
+# if read in file successfully, returns those positions
+# elif needs to overwrite and repopulate the file, generates new positions, writes them to the file, returns those new positions
+#   ==> returns (positions:List<Tuples>)
 def create_objects_and_writeif(need_to_create_file:bool, positions_formatted:list, num_positions:int, 
                                path_of_file_to_write:str, obj_files:list, 
                                default_scaling:tuple, default_height:int, default_rotation:tuple,
@@ -98,7 +99,6 @@ def create_objects_and_writeif(need_to_create_file:bool, positions_formatted:lis
                                xz_boundaries:tuple, 
                                type_of_prop:str="default_prop_name"):
     # initialize our objects list 
-    # prop_objects = []
     positions = []
 
     # unpack arguments 
@@ -109,63 +109,31 @@ def create_objects_and_writeif(need_to_create_file:bool, positions_formatted:lis
     if need_to_create_file: 
         object_positions_file = open(path_of_file_to_write, "w")
         for _ in range(num_positions):
-            # open up the obj file (considering random variations - like the grass)
-            object_variation_index = random.randint(0, len(obj_files) - 1)
-            # object_file_name = obj_files[object_variation_index]
-            
-
             # generate a random position on the xz-plane
             random_x_pos = random.random() * x_max
             random_z_pos = (random.random() * length_along_z) + z_min
 
-            # generate it in the world 
-            # prop_objects.append(Prop(f"./resources/models/{object_file_name}", 
-            #                         translation=(   random_x_pos,
-            #                                         default_height, 
-            #                                         random_z_pos), 
-            #                         rotation=default_rotation, 
-            #                         scale=default_scaling, 
-            #                         bv_type=default_bv_type))
-            
             # save it's position to the file 
             new_position_data = f"{random_x_pos} {default_height} {random_z_pos} {default_rotation[0]} {default_rotation[1]} {default_rotation[2]} {default_rotation[3]} {default_scaling[0]} {default_scaling[1]} {default_scaling[2]} {default_bv_type}\n"
             object_positions_file.write(new_position_data)
             positions.append(new_position_data.split())
+
         object_positions_file.close() 
         print(f"--random positions generated for {type_of_prop} and written to file")
     # if no file creation needed, 
-    #   consider the read in and formatted the positions from the file, just use them to populate 
+    #   consider the read in and already formatted positions from the file, just use them to populate 
     else: 
         for line in range(num_positions):
-            # open up the obj file (considering random variations - like the grass)
-            object_variation_index = random.randint(0, len(obj_files) - 1)
             # grab the nect object's position tuple
             current_object = positions_formatted[line]
             # print(f"--extracted line {line} as a tuple: {current_object}--")
-
-            # unpack the tuple 
-            pos_x = current_object[0]
-            pos_y = current_object[1]
-            pos_z = current_object[2]
-            # print("--extracted positions--")
-            rotation = (current_object[3], current_object[4], current_object[5], current_object[6])
-
-            # generate it in the world 
-            # prop_objects.append(Prop(f"./resources/models/{object_file_name}", 
-            #                         translation=(   pos_x,
-            #                                         pos_y, 
-            #                                         pos_z), 
-            #                         rotation=rotation, 
-            #                         scale=scaling, 
-            #                         bv_type=bv_type))
-            # positions.append((pos_x, pos_y, pos_z))
-            # new_position_data = f"{pos_x} {pos_y} {pos_z} {current_object[3]} {current_object[4]} {current_object[5]} {current_object[6]} {current_object[7]} {current_object[8]} {current_object[9]} {current_object[10]}\n"
-            # object_positions_file.write(new_position_data)
             positions.append(current_object)
-            print(f"--generated {type_of_prop} object from file's line {line} as a tuple: {current_object}--")
+            print(f"--using {type_of_prop} object from file's line {line} as a tuple: {current_object}--")
     return positions
 
-# draws all of the grass objects
+# master creating all the grass objects function (the positions i mean)
+#   - here you can change the scalings, height, and rotation of the grass objects 
+#   ==> returns the positions for the grass objects (either read-in and formatted or generated)
 def read_write_grass_objects(num_grass_chunks:int):
     scaling = (3, 3, 3)
     height = -12.4
@@ -177,11 +145,12 @@ def read_write_grass_objects(num_grass_chunks:int):
     need_to_create_file, positions_formatted, num_positions = read_object_positions_file(file_path)
     print(f"--need_to_create_file: {need_to_create_file}, \n---positions_formatted:\n{positions_formatted[:10]}, \n--num_positions{num_positions}")
     
+    # if the number of positions extracted from the file is 0, change back to desired number 
+    #   - this will cause the the called function to regenerate the positions
     if num_positions == 0:
         num_positions = num_grass_chunks
 
-
-    # generate the objects 
+    # get the positions  
     positions = create_objects_and_writeif(need_to_create_file=need_to_create_file, positions_formatted=positions_formatted, 
                                                num_positions=num_positions, path_of_file_to_write=file_path, 
                                                obj_files=["Grass1.obj", "Grass2.obj", "Grass3.obj"], 
@@ -192,7 +161,10 @@ def read_write_grass_objects(num_grass_chunks:int):
 
     return positions
 
-# draws all of the flower objects 
+# master creating all the flower objects function (the positions i mean)
+#   - here you can change the scalings, height, and rotation of the flower objects 
+#   ==> returns the positions for the flower objects (either read-in and formatted or generated)
+#   NOTE: NOT USED IN FINAL SUBMISSION BECAUSE THE OBJ FLOWER BOGGED DOWN THE GAME TOO MUCH
 def create_flower_objects(num_flowers:int):
     scalings = [(0.25, 0.25, 0.25), (0.5, 0.5, 0.5)]
     height = -10
@@ -203,8 +175,8 @@ def create_flower_objects(num_flowers:int):
 
     x_min, x_max, z_min, z_max = 15, 185, -85, 85
 
-    all_objects, all_positions = [], []
-    
+    all_positions = []
+
     for index, file_path in enumerate([file_path_1, file_path_2]):
         # try to open the file and read in positions 
         need_to_create_file, positions_formatted, num_positions = read_object_positions_file(file_path)
@@ -215,25 +187,21 @@ def create_flower_objects(num_flowers:int):
             print(f"--positions extracted doesn't match desired count...regenerating")
 
         # generate the objects 
-        crocus_objects, positions = create_objects_and_writeif(need_to_create_file=need_to_create_file, positions_formatted=positions_formatted, 
+        positions = create_objects_and_writeif(need_to_create_file=need_to_create_file, positions_formatted=positions_formatted, 
                                                 num_positions=num_positions, path_of_file_to_write=file_path, 
                                                 obj_files=["12974_crocus_flower_v1_l3.obj"], 
                                                 default_scaling=scalings[index], default_height=height, default_rotation=rotation, 
                                                 default_bv_type=bv_type, 
                                                 xz_boundaries=(x_min, x_max, z_min, z_max), 
                                                 type_of_prop="CROCUS")
-        all_objects += crocus_objects
         all_positions += positions
     
-    return all_objects, all_positions
+    return all_positions
 
-# draws the beehive 
-def create_beehive():
-    scaling = (0.15, 0.15, 0.15)
-    pos_x = 50
-    pos_z = -50
-    height = 10
-
+# loads the beehive as an obj file 
+#    - here you can change the rotation and bounding volume type of the beehive   
+# ==> returns the beehive as a Prop object
+def create_beehive(scaling:tuple, pos_x:float, height:float, pos_z:float):
     rotation = (-90.0, 1, 0, 0)
     bv_type = "AABB"
 

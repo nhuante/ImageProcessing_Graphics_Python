@@ -1,6 +1,9 @@
 import os, pygame
 from OpenGL.GL import *
 
+'''this file handles obj file loading (i.e. loading in a model from an obj file)'''
+
+# loads in a .mtl file as a texture 
 def load_texture(image_path):
     surf = pygame.image.load(image_path)
     image = pygame.image.tobytes(surf, 'RGBA', 1)
@@ -13,6 +16,7 @@ def load_texture(image_path):
                  GL_UNSIGNED_BYTE, image)
     return texid
 
+# handles a material (that will be used for an obj object)
 def MTL(filename):
     contents = {}
     mtl = None
@@ -46,6 +50,7 @@ def MTL(filename):
                 mtl[key] = values[1:] if len(values) > 1 else values[1]
     return contents
 
+# handles an object loaded from an .obj file 
 class OBJ:
     def __init__(self, filename, swapyz=False):
         self.vertices = []

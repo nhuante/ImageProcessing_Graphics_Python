@@ -3,22 +3,21 @@
 # LMB + move: rotate
 # RMB + move: pan
 # Scroll wheel: zoom in/out
-import sys, pygame
 from pygame.locals import *
 from pygame.constants import *
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-
 from beeGame_OBJFileLoader import *
-
 import numpy as np
 from collections import defaultdict
 
-width, height = 800, 600                                                    # width and height of the screen created
-bDrawWireframe = False    # a flag indicating whether or not drawing edges and veritices    
-bDrawBV = False # flag for drawing the bounding volues (bv)
-bCollide = False # True: Collision detected; False: Collision not detected
+''' this file handles applying transformations to meshes and calculating/drawing bounding volumes'''
+
+width, height = 800, 600    # width and height of the screen created
+bDrawWireframe = False      # a flag indicating whether or not drawing edges and veritices    
+bDrawBV = False             # flag for drawing the bounding volues (bv)
+bCollide = False            # True: Collision detected; False: Collision not detected
 
 ########################################### Transformations ####################################################
 class Transform:
@@ -27,6 +26,7 @@ class Transform:
         self.rotation = rotation        # (angle_degrees, x_axis, y_axis, z_axis)
         self.scale = scale              # (sx, sy, sz)
 
+# applies a transformation to a single point
 def apply_transform_to_point(point, transform):
     # Convert the point to a numpy array
     p = np.array(point, dtype=float)
@@ -62,6 +62,9 @@ def apply_transform_to_point(point, transform):
 
     return list(p)
 
+
+# applies a transformation to an entire mesh (point by point) because
+#   regular opengl transformation functions won't work like they do on primitive objects
 def apply_transform_to_mesh(obj, transform):
     transformed_vertices = []
     for v in obj.vertices:
@@ -74,6 +77,7 @@ def apply_transform_to_mesh(obj, transform):
 
 ########################################### Drawing Functions ####################################################
 
+# draws a list of vertices (point)
 def draw_vertices(obj):
     glDisable(GL_LIGHTING)                                                  # points are not affected by lighting
     glColor3f(1.0, 1.0, 1.0)                                                # set point color
@@ -86,7 +90,7 @@ def draw_vertices(obj):
 
     glEnable(GL_LIGHTING)
 
-
+# edges obv
 def draw_edges(obj):
     glDisable(GL_LIGHTING)
     glColor3f(0.8, 0.8, 0.8)                                                # set edge color (black)
@@ -172,6 +176,7 @@ def draw_mesh(obj, bv_type):
 
     glPopMatrix()
 
+# draws a sphere as a wire mesh around the object to show its collision area
 def draw_boundingSphere(center, radius):
     # Set wireframe mode
     glPushAttrib(GL_POLYGON_BIT)
@@ -194,6 +199,7 @@ def draw_boundingSphere(center, radius):
     glEnable(GL_LIGHTING)
     glPopAttrib()
 
+# draws a rectangle as a wire mesh around the center to show its collision area
 def draw_AABB(min_coords, max_coords, center, blueColor=False):
     # Calculate size of the box along each axis
     size_x = max_coords[0] - min_coords[0]
@@ -290,7 +296,7 @@ def compute_vertex_normals(obj):
     obj.faces = new_faces
 
 ########################################### In-Class Exercises: Collision Detection ####################################################
-# TODO: Collision detection: Sphere vs. Sphere
+# Collision detection: Sphere vs. Sphere
 #   Collision if distance between two centers <= (radius1 + radius2)
 def collisionTest_spheres(center1, radius1, center2, radius2):
     dx = center1[0] - center2[0]
@@ -300,7 +306,7 @@ def collisionTest_spheres(center1, radius1, center2, radius2):
     radius_sum = radius1 + radius2
     return distance_squared <= radius_sum * radius_sum
 
-# TODO: Collision detection: AABB vs. AABB
+# Collision detection: AABB vs. AABB
 #   Collision if their ranges (min, max) on EACH axis (x, y, z) overlap
 def collisionTest_AABBs(min_coords1, max_coords1, min_coords2, max_coords2):
     for i in range(3):  # 0=x, 1=y, 2=z
@@ -308,7 +314,7 @@ def collisionTest_AABBs(min_coords1, max_coords1, min_coords2, max_coords2):
             return False
     return True
 
-# TODO: Collision detection: Sphere vs. AABB
+# Collision detection: Sphere vs. AABB
 #   Collision if the distance from AABB's closest point to the sphere 
 #       to the sphere center is less or equal to radius
 def collisionTest_sphereAABB(center1, radius1, min_coord2, max_coords2):
@@ -325,151 +331,3 @@ def collisionTest_sphereAABB(center1, radius1, min_coord2, max_coords2):
 
     # compare distance with radius 
     return distance_squared <= radius1 * radius1
-
-# ########################################### OpenGL Program ####################################################
-# def main():
-#     pygame.init()                                                           # initialize a pygame program
-#     glutInit()                                                              # initialize glut library 
-
-#     screen = (width, height)                                                # specify the screen size of the new program window
-#     display_surface = pygame.display.set_mode(screen, DOUBLEBUF | OPENGL)   # create a display of size 'screen', use double-buffers and OpenGL
-#     pygame.display.set_caption('CPSC 515: Collisions')                      # set title of the program window
-
-#     glEnable(GL_DEPTH_TEST)
-#     glViewport(0, 0, width, height)
-#     glMatrixMode(GL_PROJECTION)                                             # set mode to projection transformation
-#     glLoadIdentity()                                                        # reset transf matrix to an identity
-#     gluPerspective(45.0, width/height, 0.1, 1000.0)                         # specify an perspective-projection view volume
-
-#     glMatrixMode(GL_MODELVIEW)                                              # set mode to modelview (geometric + view transf)
-#     gluLookAt(0, 0, 50, 0, 0, 0, 0, 1, 0)                                   # set camera's eye, look-at, and view-up in the world
-#     initmodelMatrix = glGetFloat(GL_MODELVIEW_MATRIX)
-
-#     # load OBJ mesh
-#     # load suzanne as obj1
-#     model1_name = "suzanne.obj"
-#     model_path = os.path.join("./resources/models/", model1_name)
-#     if not os.path.exists(model_path):
-#         raise ValueError(f"OBJ file not found: {model_path}")
-#     obj1 = OBJ(filename=model_path, swapyz=False)
-#     # transform suzanne
-#     transform_suzanne = Transform(
-#     translation=(0, 0, 0),
-#     rotation=(0, 0, 1, 0),   # no rotation
-#     scale=(0.5, 0.5, 0.5))
-#     apply_transform_to_mesh(obj1, transform_suzanne) # here we physically transform each vertex position
-
-#     BV1_type = "sphere" # bounding volume type: "sphere", "AABB"
-
-#     # load panther as obj2
-#     model2_name = "panther.obj"
-#     model_path = os.path.join("./resources/models/", model2_name)
-#     if not os.path.exists(model_path):
-#         raise ValueError(f"OBJ file not found: {model_path}")
-#     obj2 = OBJ(filename=model_path, swapyz=False)
-
-#     # transform panther
-#     transform_panther = Transform(
-#     translation=(2, 0, 0),   # moved by 2
-#     rotation=(-90, 0, 1, 0), # rotated -90 degrees around Y
-#     scale=(1, 1, 1))
-#     apply_transform_to_mesh(obj2, transform_panther) # here we physically transform each vertex position
-
-#     BV2_type = "AABB" # bounding volume type: "sphere", "AABB"    
-
-#     # mouse controled dynamic view
-#     rx, ry = (0,0)
-#     tx, ty = (0,0)
-#     zpos = 5
-#     rotate = False
-#     move = False
-#     move_left, move_right = False, False
-#     global bDrawWireframe, bDrawBV, bCollide
-#     while True:
-#         move_left = False
-#         move_right = False
-#         for e in pygame.event.get():
-#             if e.type == QUIT:
-#                 sys.exit()
-#             elif e.type == KEYDOWN and e.key == K_ESCAPE:
-#                 sys.exit()
-#             elif e.type == KEYDOWN and e.key == K_l:
-#                 # apply Laplacian smoothing
-#                 laplacian_smooth(obj1, iterations=1)
-#                 compute_vertex_normals(obj1)
-#                 obj1.rebuild_gl_list()
-#             elif e.type == KEYDOWN and e.key == K_w:
-#                 bDrawWireframe = not bDrawWireframe
-#             elif e.type == KEYDOWN and e.key == K_c:
-#                 bDrawBV = not bDrawBV           
-#             elif e.type == KEYDOWN and e.key == K_LEFT:
-#                 move_left = True
-#                 move_panther = True
-#             elif e.type == KEYDOWN and e.key == K_RIGHT:
-#                 move_right = True
-#                 move_panther = True
-#             elif e.type == MOUSEBUTTONDOWN:
-#                 if e.button == 4: zpos = max(1, zpos-1)
-#                 elif e.button == 5: zpos += 1
-#                 elif e.button == 1: rotate = True
-#                 elif e.button == 3: move = True
-#             elif e.type == MOUSEBUTTONUP:
-#                 if e.button == 1: rotate = False
-#                 elif e.button == 3: move = False
-#             elif e.type == MOUSEMOTION:
-#                 i, j = e.rel
-#                 if rotate:
-#                     rx += i
-#                     ry += j
-#                 if move:
-#                     tx += i
-#                     ty -= j
-        
-#         # transform panther if key pressed
-#         if move_left == True or move_right == True:
-#             x_offset = 0.0
-#             if move_left:
-#                 x_offset = -0.5
-#             if move_right:
-#                 x_offset = 0.5
-#             transform_panther = Transform(
-#             translation=(x_offset, 0, 0),   # moved by x_offset
-#             rotation=(0, 0, 1, 0),          
-#             scale=(1, 1, 1))
-#             apply_transform_to_mesh(obj2, transform_panther) # here we physically transform each vertex position
-
-#         # collision detection
-#         min_coords1, max_coords1, center1, radius1 = obj1.cal_minMax()
-#         min_coords2, max_coords2, center2, radius2 = obj2.cal_minMax()
-#         if BV1_type == BV2_type: 
-#             if BV1_type == "sphere":
-#                 bCollide = collisionTest_spheres(center1, radius1, center2, radius2)
-#             elif BV1_type == "AABB":
-#                 bCollide = collisionTest_AABBs(min_coords1, max_coords1, min_coords2, max_coords2)
-#         else:
-#             if BV1_type == "sphere" and BV2_type == "AABB":
-#                 bCollide = collisionTest_sphereAABB(center1, radius1, min_coords2, max_coords2)
-#             elif BV2_type == "sphere" and BV1_type == "AABB":
-#                 bCollide = collisionTest_sphereAABB(center2, radius2, min_coords1, max_coords1)
-
-#         # Clear screen ONCE per frame
-#         glClearColor(0, 0, 0, 1)
-#         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-
-#         # draw mesh
-#         glLoadIdentity()
-#         glTranslate(tx/20., ty/20., - zpos)
-#         glRotate(ry, 1, 0, 0)
-#         glRotate(rx, 0, 1, 0)
-#         glPushMatrix()
-#         # draw obj1
-#         draw_mesh(obj=obj1, bv_type=BV1_type)
-#         # draw obj2
-#         draw_mesh(obj=obj2, bv_type=BV2_type)
-#         glPopMatrix()
-#         drawAxes()
-
-#         pygame.display.flip()
-#         pygame.time.wait(10)
-
-# main()

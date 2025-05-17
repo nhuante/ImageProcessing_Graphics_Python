@@ -3,7 +3,6 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import numpy as np
 import threading 
 import random 
 
@@ -69,37 +68,53 @@ def set_3d_projection():
 
     glMatrixMode(GL_MODELVIEW)
 
-# regenerate flowers and pollen particles
+# generate flowers and pollen particles
 def generate_flowers_pollen(force_regnerate:bool):
+    ''' - the flowers will be generated based on the positions stored in crocusFlowers_positions.txt and crocusFlowers_short_positions.txt. 
+            - if the file is empty, doesn't match the correct number of positions needed, or does not exist, the files will be overwritten 
+            with newly, randomly generated positions. 
+            (note that there are two scalings of flowers (hence why once has the word short in the name), so if i pass in num_flowers=6 
+            to the create_flower() function below, it will actually create 3 short ones and 3 normal ones at the scalings of 1 and 2.5)
+        - a pollen particle will be created for each flower that was created and will be placed just above the top of the flower stem 
+            - if you change the scalings in the scene_objects file, make sure to change them here too or your pollen particles will be 
+            placed incorrectly
+        - force_regenerate = True will overwrite the previous flower positions and re-generate new positions
+    '''
     # flowers 
     flowers, flower_positions = create_flowers(num_flowers=6, force_regenerate=force_regnerate) 
     scalings = (1, 2.5)
+
     # pollen particles 
     pollen_particles = []
-    for n in range(len(flower_positions)):
-        if n <= (len(flower_positions)//2) - 1: 
+    for n in range(len(flower_positions)):                                                  # for each flower   
+        if n <= (len(flower_positions)//2) - 1:                                             # first half should be scaled at 1
             pollen_height = flower_positions[n][1] + (70 * scalings[0]) + 12
-        else: 
-            pollen_height = flower_positions[n][1] + (70 * scalings[1]) + 12
+        else:                                                                               # second half should be scaled at 2.5
+            pollen_height = flower_positions[n][1] + (70 * scalings[1]) + 12                
+        # add the new pollen particle to our list 
         pollen_particles.append(Pollen( radius=2, color=(215/255, 215/255, 25/255), pollen_id=n+1, 
-                                        initial_x=flower_positions[n][0],                 # x_pos 
-                                        initial_y=pollen_height ,  # y_pos
-                                        initial_z=flower_positions[n][2]))                  # z_pos
-        
+                                        initial_x=flower_positions[n][0],           # x_pos 
+                                        initial_y=pollen_height ,                   # y_pos
+                                        initial_z=flower_positions[n][2]))          # z_pos
     return flowers, flower_positions, pollen_particles
 
+# loads in the grass (done in a thread)
 def load_grass(number_of_grass:int, out_list, done_flag):
     out_list.extend(read_write_grass_objects(number_of_grass))
     done_flag.set()
 
+
+
+# main game loop 
 def main():
+    # ----------------------INITIALIZATION OF GLUT AND PYGAME SETUP----------------------------------
     pygame.init()                                                           # initialize a pygame program
     glutInit()                                                              # initialize glut library 
 
     # set up screen 
     screen = (width, height)                                                # specify the screen size of the new program window
     display_surface = pygame.display.set_mode(screen, DOUBLEBUF | OPENGL)   # create a display of size 'screen', use double-buffers and OpenGL
-    pygame.display.set_caption('BeeGame - Waiting To Load')     # set title of the program window
+    pygame.display.set_caption('The Bee Game - Waiting To Load')            # set title of the program window (before any of the loading screens appear)
 
     # create UI 
     ui = UI(win_width=width, win_height=height)
@@ -116,14 +131,15 @@ def main():
 
     # initialize the playerBee: body dimensions and transformation parameters 
     playerBee = Bee() 
-
+    
+    # will be used later in the loading screens 
     num_dots = 1
             
-    # initialize all the props 
+    # ----------------------CREATION OF ALL THE PROP----------------------------------
     props = []
-    # flower_positions = []
     grass_objects = []
 
+    # start the thread that reads/generates all the grass positions
     grass_done = threading.Event()  
     loader = threading.Thread(
         target=load_grass, 
@@ -132,13 +148,9 @@ def main():
     )
     loader.start() 
 
-    # while that thread above finishes, lets do the loading screen 
-    # glClear(GL_COLOR_BUFFER_BIT)          # clear to black
-    # set_2d_projection() 
-    # glLoadIdentity()                      # reset any stray transforms
-    
+    # while that thread above finishes, lets do the first loading screen 
     while not grass_done.is_set():
-        # pump events 
+        # pump events so the OS doesn't think the application is not responding
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 pygame.quit()
@@ -152,16 +164,23 @@ def main():
         ui.draw_loading_screen(f" - Reading/Writing To Files{dots}")
         pygame.display.flip()
         pygame.time.wait(50)
+    # after done loading that, we must pop off the 2d projection matrix we had pushed 
     glPopMatrix()
-    # all_grass = create_grass_objects(250)
-    obj_files=["Grass1.obj", "Grass2.obj", "Grass3.obj"]
-    grass_objects_as_props = []
-    for index, grass_position in enumerate(grass_objects):
-        # pump events 
+
+
+    # now that we have the positions for all the grass objects, lets actually instantiate
+    # a Prop object at each position
+
+    obj_files=["Grass1.obj", "Grass2.obj", "Grass3.obj"]        # three variations of grass models 
+    grass_objects_as_props = []                                 # holds our actual grass Prop objects
+
+    for index, grass_position in enumerate(grass_objects):      # for each grass position 
+        # pump events so the OS doesn't think the application is not responding
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
                 pygame.quit()
                 return
+            
         # loading screen 
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         set_2d_projection()                   # switch into ortho/UI space
@@ -171,7 +190,7 @@ def main():
         ui.draw_loading_screen(f" - [{index/len(grass_objects):.2f}%] Creating Prop Objects{dots}")
         pygame.display.flip()
         pygame.time.wait(50)
-        # grass_objects.append(grass)
+
         # generate it in the world 
         object_variation_index = random.randint(0, len(obj_files) - 1)
         object_file_name = obj_files[object_variation_index]
@@ -185,20 +204,22 @@ def main():
         # print("creating the prop objects for grass")
         glPopMatrix()
 
+    # after all that loading, reset the buffers and return to 3d projection mode 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     set_3d_projection()
 
-    # beehive 
-    beehive = create_beehive()
+
+
+    # create beehive 
+    beehive = create_beehive(scaling=(0.15, 0.15, 0.15), pos_x=50, height=10, pos_z=-50)
     props.append(beehive)
 
 
-    # FIXME: flowers and pollen 
+    # flowers and pollen 
     flowers, flower_positions, pollen_particles = generate_flowers_pollen(force_regnerate=False)
 
-
-
     # moth enemies 
+    # normal mode moths 
     moth_enemies = [] 
     moth_target_positions = [   [(25, 35, 75), (50, 15, 75), (50, 20, 20), (25, 35, 20)], 
                                 [(125, 10, 35), (150, 15, 75), (175, 10, 35), (150, 16, 0)],
@@ -210,7 +231,7 @@ def main():
                                 initial_x=25, initial_y=40, initial_z=75, 
                                 target_positions=moth_target_positions[n]))
         print(f"---done drawing moth with id: {moth_enemies[n].moth_id}")
-
+    # additional hard mode moths 
     moth_target_positions_hard = [  [(25, 145, 75), (50, 125, 75), (50, 105, 20), (25, 145, 20)], 
                                     [(125, 100, 35), (150, 105, 75), (175, 100, 35), (105, 106, 0)],
                                     [(16, 106, -90), (32, 106, -50), (80, 106, -70), (55, 106, -95)],
@@ -227,8 +248,8 @@ def main():
     # initialize the camera: camera parameters 
     camera = Camera(view_mode="follow") 
 
-    # initialize the states of all the designated keys
 
+    # ----------------------INITIALIZATION OF ALL INPUT KEYS----------------------------------
     # bee movement parameters 
     key_left_on = False     # if left-arrow key is HELD on now
     key_right_on = False    # if right-arrow key is held on now
@@ -260,16 +281,19 @@ def main():
     loading_game = True 
     loading_game_time = (2 * 1000)
     loading_game_start_time = pygame.time.get_ticks()
-    # num_dots = 1
 
-    # developer vars 
+    # developer mode vars 
     show_bounding_boxes = False
     developer_mode = False
 
     # error handling in case the game crashes 
     error = None 
 
+
+
+    # ----------------------MAIN GAME LOOP----------------------------------
     while True:
+        # if no error has been raised, continue as normal
         if error is None:
             try:
                 bResetModelMatrix = False
@@ -286,7 +310,8 @@ def main():
                     if loading_game:
                         pass
 
-                    # mouse input
+
+                    # check for mouse input
                     elif event.type == pygame.MOUSEBUTTONDOWN:
                         # get mouse position 
                         mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -337,7 +362,7 @@ def main():
 
                         
                         
-                    # keyboard input - key down
+                    # check for keyboard input - key down
                     elif event.type == pygame.KEYDOWN:
                         # if game paused, only listen for the `P` or `Esc` keys to unpause. no other keyboard input
                         if playerBee.paused:
@@ -354,7 +379,7 @@ def main():
                                 bResetModelMatrix = True
                                 camera.reset_views()
                             # switch camera view input -----------------------------------------------------
-                            elif event.key == pygame.K_SPACE:           # switch view modes: FIXME: list viewing modes here 
+                            elif event.key == pygame.K_SPACE:           # switch view modes
                                 camera.reset_views()
                                 camera.switch_view()                   
                             # bee movement paramter inputs -----------------------------------------------------
@@ -392,32 +417,6 @@ def main():
                             elif event.key == pygame.K_DELETE:          # toggle developer mode 
                                 developer_mode = not developer_mode
                                 print(f"--DEVELOPER MODE {developer_mode}")
-                            # DEVELOPER BUTTONS -----------------------------------------------------
-                            if developer_mode:
-                                if event.key == pygame.K_1:                       # decrease swing speed for animation
-                                    playerBee.anim_speed -= 0.5
-                                    print("Swing Speed:", playerBee.anim_speed)    
-                                elif event.key == pygame.K_2:                       # increase swing speed for animation
-                                    playerBee.anim_speed += 0.5
-                                    print("Swing Speed:", playerBee.anim_speed)    
-                                elif event.key == pygame.K_3:                       # decrease walk speed mp for walking
-                                    playerBee.walk_speed_mp -= 0.1
-                                    print("Walk Speed MP:", playerBee.walk_speed_mp)
-                                elif event.key == pygame.K_4:                       # increase walk speed mp for walking
-                                    playerBee.walk_speed_mp += 0.1
-                                    print("Walk Speed MP:", playerBee.walk_speed_mp)
-                                elif event.key == pygame.K_5:                       # decrease bee health 
-                                    playerBee.health_percentage -= 20
-                                    print("Bee Health: ", playerBee.health_percentage)
-                                elif event.key == pygame.K_6:                       # increase score points 
-                                    playerBee.score += 50
-                                    print("Bee Score: ", playerBee.score)
-                                elif event.key == pygame.K_7:                       # toggle bounding boxes shown 
-                                    show_bounding_boxes = not show_bounding_boxes
-                                elif event.key == pygame.K_8:                       # force regenerate flower positions 
-                                    flowers, flower_positions, pollen_particles = generate_flowers_pollen(force_regnerate=True) 
-                                elif event.key == pygame.K_9:
-                                    raise ValueError("testing the uh oh screen")
                             # un-pause the game -----------------------------------------------------
                             elif event.key == pygame.K_p or event.key == pygame.K_ESCAPE:
                                 playerBee.paused = not playerBee.paused       # will pause the current bee animation
@@ -462,8 +461,35 @@ def main():
                                     playerBee.carrying_pollen = None 
                                     playerBee.leg_carrying_pollen = False
 
+                            # DEVELOPER BUTTONS -----------------------------------------------------
+                            if developer_mode:
+                                if event.key == pygame.K_1:                       # decrease swing speed for animation
+                                    playerBee.anim_speed -= 0.5
+                                    print("Swing Speed:", playerBee.anim_speed)    
+                                elif event.key == pygame.K_2:                       # increase swing speed for animation
+                                    playerBee.anim_speed += 0.5
+                                    print("Swing Speed:", playerBee.anim_speed)    
+                                elif event.key == pygame.K_3:                       # decrease walk speed mp for walking
+                                    playerBee.walk_speed_mp -= 0.1
+                                    print("Walk Speed MP:", playerBee.walk_speed_mp)
+                                elif event.key == pygame.K_4:                       # increase walk speed mp for walking
+                                    playerBee.walk_speed_mp += 0.1
+                                    print("Walk Speed MP:", playerBee.walk_speed_mp)
+                                elif event.key == pygame.K_5:                       # decrease bee health 
+                                    playerBee.health_percentage -= 20
+                                    print("Bee Health: ", playerBee.health_percentage)
+                                elif event.key == pygame.K_6:                       # increase score points 
+                                    playerBee.score += 50
+                                    print("Bee Score: ", playerBee.score)
+                                elif event.key == pygame.K_7:                       # toggle bounding boxes shown 
+                                    show_bounding_boxes = not show_bounding_boxes
+                                elif event.key == pygame.K_8:                       # force regenerate flower positions 
+                                    flowers, flower_positions, pollen_particles = generate_flowers_pollen(force_regnerate=True) 
+                                elif event.key == pygame.K_9:
+                                    raise ValueError("testing the uh oh screen")
+
                         
-                    # keyboard input - key up
+                    # check for keyboard input - key up
                     elif event.type == pygame.KEYUP:
                         # bee movement paramter inputs 
                         if event.key == pygame.K_RIGHT:             # stop turning right 
@@ -498,14 +524,14 @@ def main():
                 
                 #--------END: pygame.event.get()
 
-
+                # ----------------------HANDLE LEVEL TIMER----------------------------------
                 if game_mode == "Level 1" and not playerBee.paused:
                     playerBee.handle_level_timer()
                     if playerBee.game_time_to_win <= 0:
                         playerBee.health_percentage = 0
 
 
-                        
+                # ----------------------HANDLE THE LENGTH OF THE LOADING SCREEN----------------------------------
                 # if game is loading, recheck the time passed 
                 if loading_game:
                     # recheck time 
@@ -513,13 +539,17 @@ def main():
                     # print(current_time)
                     if current_time >= loading_game_time + loading_game_start_time:
                         loading_game = False
+                # ----------------------HANDLE REGULAR GAME UPDATES IF NOT LOADING----------------------------------
                 # if game is not loading, do all the game stuff
                 else:
+                    # ----------------------IF PAUSED, MAINTAIN TIMERS----------------------------------
                     # if game is paused, handle the pause for the countdown timers 
                     if playerBee.paused:
                         playerBee.maintain_countdown_timers_when_paused()
+                    # ----------------------IF NOT PAUSED, HANDLE MOVEMENT OF CHARACTERS----------------------------------
                     # if game not paused, handle bee movement
                     else:
+                        # ----------------------BEE XZ MOVEMENT UPDATES----------------------------------
                         if playerBee.angry_bee_mode: turn_speed = playerBee.angry_turn_speed
                         else: turn_speed = playerBee.normal_turn_speed
                         # update the bee's freeform movement parameters 
@@ -548,7 +578,7 @@ def main():
                                 # print(F"\nBEE ACTIVELY MOVING - {playerBee.actively_moving} ")
 
 
-
+                        # ----------------------BEE Y MOVEMENT UPDATES----------------------------------
                         # update the bee's height
                         height_offset_per = 0.0 
                         if key_shift_on:
@@ -558,13 +588,14 @@ def main():
                             height_offset_per = -0.25
                             playerBee.update_height_offset(height_offset_per, garden_y_boundaries, (props + flowers))
 
+                        # ----------------------BEE ANGRY MODE UPDATES----------------------------------
                         # handle angry mode 
                         if playerBee.angry_bee_mode or playerBee.is_recharging:
                             playerBee.handle_angry_mode()
                             # if playerBee.angry_bee_mode == False:
                                 # angry_mode_activated = False
 
-                        # camera.tilt_angle_horizontal, camera.tilt_angle_vertical = 0.0, 0.0
+                        # ----------------------CAMERA MOVEMENT/ZOOM UPDATES----------------------------------
                         # update camera parameters 
                         if key_a_on:
                             if camera.view_mode in ["first-person", "follow"]:
@@ -596,7 +627,7 @@ def main():
                         elif key_e_on:
                             camera.zoom_distance -= 0.5 # to match the speed of zooming in above      
 
-                    
+                    # ----------------------GAME OVER CHECKS----------------------------------
                     # check if the game is over 
                     if playerBee.health_percentage <= 0:
                         game_over = True 
@@ -605,7 +636,7 @@ def main():
                         game_over = True 
                         game_result = True
 
-
+                    # ----------------------RESET CAMERA CHECK----------------------------------
                     # When '0' is tapped, reset the view 
                     if (bResetModelMatrix):
                         glLoadIdentity()
@@ -615,10 +646,10 @@ def main():
 
                 glLoadIdentity()
                 
+                # ----------------------GLULOOKAT() UPDATE----------------------------------
                 # Upate camera parameters: eye_position and look_at point
                 new_eye_pos, new_lookat = camera.update_view(playerBee)
 
-                
                 # Use updated camera parameters to update camera model
                 gluLookAt(new_eye_pos[0], new_eye_pos[1], new_eye_pos[2], 
                         new_lookat[0], new_lookat[1],new_lookat[2],
@@ -627,24 +658,28 @@ def main():
 
                 glMultMatrixf(modelMatrix)        
                 
+
+                # ----------------------DRAW ALL MODELS----------------------------------
                 # draw all the models that are made with primitive glu shapes 
-                # bee
+
+                # ----------------------BEE----------------------------------
                 playerBee.update_animations()
                 playerBee.draw_bee(draw_bounding_boxes=show_bounding_boxes)
-                # pollen
+
+                # ----------------------POLLEN----------------------------------
                 for pollen in pollen_particles:
                     pollen.draw_pollen(draw_bounding_boxes=show_bounding_boxes, bee=playerBee)
-                # fence
+
+                # ----------------------FENCE----------------------------------
                 playerBee.draw_fence()
-                # moths 
+
+                # ----------------------MOTHS---------------------------------- 
                 if game_mode == "Level 1":
                     for moth in moth_enemies:
                         moth.paused = playerBee.paused
                         moth.draw_moth(bee=playerBee, draw_bounding_boxes=show_bounding_boxes, obstacles=(props + flowers))
-                # flowers 
-                # for flower in flowers:
-                #     flower.draw(show_bounding_box=show_bounding_boxes)
 
+                # ----------------------PROPS (GRASS, FLOWERS, BEEHIVE)----------------------------------
                 # draw all the props that were imported as obj files 
                 for prop in (props + flowers):
                     prop.draw(show_bounding_box=show_bounding_boxes)
@@ -653,27 +688,26 @@ def main():
                     grass.draw()
                     
 
-                
+                # ----------------------DRAW UI SCREENS----------------------------------
                 set_2d_projection()     # switch to 2d mode so we can draw the gui 
 
                 # draw gui elements based on room
-                if loading_game:
+                if loading_game:                         # LOADING-----------------------
                     # loading screen 
+                    pygame.display.set_caption('The Bee Game - Loading')
                     num_dots = int((num_dots + 1) % 10) 
                     dots = num_dots * "."
                     ui.draw_loading_screen(f" - Finishing Touches{dots}")
-                elif game_mode == "Lobby":
+                elif game_mode == "Lobby":              # LOBBY-----------------------
+                    pygame.display.set_caption('The Bee Game - Do You Have Any Buzzin\' Talent')
                     if playerBee.paused and not help_showing: 
                         ui.draw_lobby_pause_gui()   # lobby pause screen
                     elif help_showing:  
                         ui.draw_help_menu()         # help screen (pause while we show)
                         playerBee.paused = True
-                        # for moth in moth_enemies:
-                        #     moth.paused = True
-
                     else:
                         ui.draw_lobby_gui(bee=playerBee)         # normal lobby ui
-                elif game_mode == "Level 1":
+                elif game_mode == "Level 1":            # LEVEL-----------------------
                     if help_showing:
                         ui.draw_help_menu()         # help screen (pause while we show)
                         playerBee.paused = True
@@ -690,17 +724,21 @@ def main():
                 glPopMatrix()           # get rid of the matrix changes from gui drawing 
                 set_3d_projection()     # and change back to 3d mode for the game environment elements
 
-                # draw other entities in the scene
-                drawAxes()
+
+                # ----------------------DRAW GROUND----------------------------------
                 drawGround()
+
+                # ----------------------SHOW CHANGES ON SCREEN AND WAIT A TID----------------------------------
                 glPopMatrix()
                 pygame.display.flip()
                 pygame.time.wait(10)
                 continue 
+            # ----------------------IF AN ERROR IS RAISED, BREAK FROM THE GAME LOOP----------------------------------
             except Exception as e:
                 import traceback; traceback.print_exc()
                 error = e 
         
+        # ----------------------IF AN ERROR OCURRED, SHOW UHOH SCREEN----------------------------------
         # if we get here, error != None
         # clear screen + set 2D projection for your UI
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
