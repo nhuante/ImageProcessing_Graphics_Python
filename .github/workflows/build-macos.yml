@@ -1,0 +1,49 @@
+name: Build macOS Bundle
+
+# Trigger on push (or on tags/releases)
+on:
+  push:
+    branches:
+      - main
+    # optionally only on version tags:
+    # tags:
+    #   - 'v*.*.*'
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      # 1. Check out your code
+      - uses: actions/checkout@v3
+
+      # 2. Set up Python
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      # 3. Install dependencies & PyInstaller
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      # 4. Run PyInstaller to bundle your game
+      - name: Build .app with PyInstaller
+        run: |
+          source venv/bin/activate
+          pyinstaller --noconfirm --onedir \
+            --add-data "beeGameFinal:beeGameFinal" \
+            --add-data "resources:resources" \
+            beeGameFinal/beeGame_main.py
+
+      # 5. Upload the resulting .app as an artifact
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: BeeGame-macos
+          path: dist/beeGame_main.app
