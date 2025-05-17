@@ -31,10 +31,9 @@ All core graphics functionality uses only NumPy, Pygame, and PyOpenGL. Additiona
 
 | Library  | Version    | Install Command                               |
 | -------- | ---------- | --------------------------------------------- |
-| numpy    | `>=1.24.0` | `pip install numpy`                           |
+| numpy    | `>=1.24.4` | `pip install numpy`                           |
 | pygame   | `>=2.5.2`  | `pip install pygame`                          |
-| PyOpenGL | `>=3.1.6`  | `pip install PyOpenGL PyOpenGL_accelerate`    |
-| Pillow   | `>=10.0.0` | `pip install pillow` *(for future texturing)* |
+| PyOpenGL | `>=3.1.6`  | `pip install PyOpenGL`    |
 
 You can also find all required installs in the `requirements.txt` file.
 
@@ -53,17 +52,13 @@ You can also find all required installs in the `requirements.txt` file.
 This is *entirely* necessary, but it is best practice to do so to avoid 
 * Polluting your system Python, which might lead to version conflicts later if you start another project that needs a different version of, say, `pygame` or `numpy`
     ```bash
-       python3 -m venv venv
-        # on macOS/Linux
-        source venv/bin/activate
-        # on Windows (PowerShell)
-        ./venv/Scripts/Activate.ps1
+        python3 -m venv .venv       # or `python -m venv .venv` on Windows
+        source .venv/bin/activate   # or `.venv\Scripts\activate`
     ```
 
 3. **Install Dependencies**
 Make sure you have `pip >= 20.3` then:
     ```bash
-        pip install --upgrade pip
         pip install -r requirements.txt
     ```
 
