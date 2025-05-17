@@ -50,7 +50,7 @@ You can also find all required installs in the `requirements.txt` file.
 1. **Download the .exe or .app release in the `releases` folder without downloading or installing any dependencies**  
 
   * **Windows**
-    * download the `TheBeeGame.zip`, unzip the folder, and double-click the .exe file 
+    * download the `TheBeeGame-Windows.zip`, unzip the folder, and double-click the .exe file 
   * **Mac'Linux**
     * download the `TheBeeGame-Macos.zip`, unzip the folder, and double-click the .app file 
 

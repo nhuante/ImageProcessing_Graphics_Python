@@ -17,7 +17,21 @@ from beeGame_sceneObjects import read_object_positions_file
         - CAMERA 
         - POLLEN
 '''
-
+# used to determine whether to access the resource files from the local file structure 
+# or from the pyInstaller's temp folder
+def resource_path(rel_path: str) -> str:
+    """
+    Get the absolute path to a bundled resource, works for dev and PyInstaller.
+    """
+    if getattr(sys, 'frozen', False):
+        # PyInstaller bundles files into sys._MEIPASS
+        base = sys._MEIPASS
+        final_path = os.path.join(base, rel_path)
+    else:
+        # running in normal Python, resources live next to this script
+        # base = os.path.dirname(os.path.abspath(__file__))
+        final_path = rel_path
+    return final_path
 
 # Complete the function for rotating the input `vector` around `rot_axis` by `angle_degrees`
 #      Construct a 3x3 rotation matrix (no need Homogeneous) and multiply it with the input vector
@@ -965,7 +979,7 @@ def create_flowers_and_writeif(need_to_create_file:bool, positions_formatted:lis
 
     # if needed, generate random nums and write them to the file for next time                                                    
     if need_to_create_file: 
-        object_positions_file = open(path_of_file_to_write, "w")
+        object_positions_file = open(resource_path(path_of_file_to_write), "w")
         for _ in range(num_positions):   
             # generate a random position on the xz-plane
             random_x_pos = random.random() * x_max
