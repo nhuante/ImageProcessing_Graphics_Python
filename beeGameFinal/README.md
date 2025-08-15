@@ -6,7 +6,7 @@ Spring 2025 • Natalie Huante • CPSC 515: Advanced Computer Graphics
 
 **Quick Links**
 
-* [Play The Bee Game Here]()
+* [Play The Bee Game Here](https://nhuante.itch.io/the-bee-game)
 * [The Bee Game Presentation](https://www.canva.com/design/DAGnmDYIDQo/C7kUFL_jMfZ9g7deil8AjA/edit?utm_content=DAGnmDYIDQo&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 * [3d Visualisation of All Moth Paths](https://www.desmos.com/3d/fb2pxzfkns)
 
@@ -51,7 +51,7 @@ You can also find all required installs in the `requirements.txt` file.
 
   * **Windows**
     * download the `TheBeeGame-Windows.zip`, unzip the folder, and double-click the .exe file 
-  * **Mac'Linux**
+  * **Mac/Linux** *Coming Soon*
     * download the `TheBeeGame-Macos.zip`, unzip the folder, and double-click the .app file 
 
 2. **OR Download the most-recent verson from [Itch.io]()**  
