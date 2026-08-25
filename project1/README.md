@@ -28,14 +28,15 @@ _Note: Some filters are more time-costly than others, so be sure to wait suffici
 
 ## ▶️ How to Run
 
-1. Navigate to the project folder:
+1. Navigate to the repo root folder:
 ```bash
-cd Project1_Filters
+# pwd should end in the repo name like below
+C:\Users\natal\Downloads\ImageProcessing_Graphics_Python>
 ```
 2. Run the main program:
 ```bash
-python P1_filter_main_BLANK.py # for windows
-python3 P1_filter_main_BLANK.py # for mac
+python project1\P1_filter_main_BLANK.py # for windows
+python3 project1\P1_filter_main_BLANK.py # for mac
 ```
 3. Make sure you have the required libraries installed:
 ```bash
