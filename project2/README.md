@@ -39,7 +39,7 @@ All interactions will be handled through keyboard input. Use the below chart to 
 
 1. Navigate to the project folder:
 ```bash
-cd Project2_Transform_Viewing
+cd project2
 ```
 2. Run the main program:
 ```bash
